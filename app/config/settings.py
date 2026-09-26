@@ -58,6 +58,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "sheets.middleware.SessionEpochMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
@@ -100,7 +101,17 @@ SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = "Lax"
 
 MAGIC_LINK_TTL_MINUTES = 15
+MAGIC_LINKS_PER_HOUR = 5
 DAILY_INVITE_CAP = 20
+
+# Optional allowlist for cold sign-in: emails or domains, comma separated.
+# People who were invited can always sign in. Empty means open.
+ALLOWLIST = [x.strip().lower() for x in os.environ.get("GREENSHEET_ALLOWLIST", "").split(",") if x.strip()]
+
+# Outbound webhooks (bridges). Delivered in a background thread.
+WEBHOOKS_ENABLED = os.environ.get("GREENSHEET_WEBHOOKS", "1") == "1"
+WEBHOOK_TIMEOUT = 5
+WEBHOOK_SYNC = False  # tests set this to deliver inline
 
 LANGUAGE_CODE = "en-us"
 TIME_ZONE = os.environ.get("GREENSHEET_TZ", "UTC")

@@ -115,7 +115,7 @@ Status values: **Accepted**, **Superseded by Dn**, **Deferred**.
 
 ## D8. Flip side is adopted as a concept; the feature is deferred
 
-**Status:** Accepted (concept), Deferred (feature), 2026-09-26
+**Status:** Superseded by D20, 2026-09-26
 
 **Decision.** A flip side is a greensheet with the roles of an existing greensheet reversed, paired with it. The pairing feature is not scheduled. Since any person can be a requester (D2, D4), a fulfiller can already create the unpaired equivalent.
 
@@ -202,11 +202,11 @@ Status values: **Accepted**, **Superseded by Dn**, **Deferred**.
 
 ---
 
-## D15. Technology stack: leaning Django, SQLite, htmx
+## D15. Technology stack: Django, SQLite, htmx
 
-**Status:** Deferred, 2026-09-26
+**Status:** Accepted, 2026-09-26
 
-**Decision.** Not formally decided. See `docs/RESEARCH.md` for the comparison. Current leaning is a server-rendered app with an embedded database and minimal client script, shipped as one container or binary. D16 adds a constraint: whatever is chosen must expose an HTTP API that the web interface itself uses.
+**Decision.** Django, SQLite, and htmx, shipped as one container. Decided with the 0.1.0 release; the prototype below became the application in `app/`. Earlier text kept for the record: not formally decided. See `docs/RESEARCH.md` for the comparison. Current leaning is a server-rendered app with an embedded database and minimal client script, shipped as one container or binary. D16 adds a constraint: whatever is chosen must expose an HTTP API that the web interface itself uses.
 
 **Prototype (2026-09-26).** Built on Django 6, SQLite, and htmx in `prototype/`. It implements D1 through D14, D16 in part (link channels and a JSON API with tokens; no bridges or webhooks yet), D17, D18, and D19. Its README lists what is missing. This is not yet a stack decision; it is evidence for one.
 
@@ -304,3 +304,31 @@ Full specification of the hard copy is in `docs/DESIGN.md` under Surfaces.
 - Stable short URLs and QR generation are launch requirements.
 - Reading and completing must work without JavaScript, since the printed URL may be opened on anything.
 - The "as of" timestamp means a hard copy is honest about being a snapshot; there is no attempt to sync paper back automatically.
+
+---
+
+## D20. The flip side is a feature, created by the fulfiller from a folded corner
+
+**Status:** Accepted, 2026-09-26. Supersedes D8.
+
+**Decision.** A greensheet has two faces. The front is what the requester needs from the fulfiller. The flip side is what the fulfiller needs from the requester: a second greensheet with the same two people and the roles reversed, paired with the front for life.
+
+- The fulfiller creates it. On the front, a folded corner sits at the bottom right of the page. Clicking it turns the sheet over to a page that explains the flip side and asks whether to create it. Confirming creates it and lands on it, ready for items.
+- Once it exists, both faces show the corner, and it turns the sheet over to the other face. The turn is animated, and skipped when the viewer prefers reduced motion.
+- The flip side is named "Flip side of <name>" and can be renamed. Its contact details start as the new requester's sign-in email; phone is blank until set.
+- No invite email. The other party is already here. They see it on their home page, on the front's corner, and in their daily summary if opted in. An accepted invite record is created for consistency.
+- The requester of the front cannot create the flip side; there is no corner for them until it exists. A flip side has no flip side of its own.
+- Everything else is an ordinary greensheet: items, channels, history, hard copy, archive, digest. Archiving one face does not archive the other.
+
+**Why.** The fulfiller often needs things from the requester too. The contractor needs the client's documents; the client needs the contractor's schedule and invoice. Making the fulfiller create a separate unrelated greensheet loses the pairing and the moment of discovery. The folded corner reuses the one visual motif the product has, the fold on the mark, and turning the sheet over is exactly what you would do with paper.
+
+**Rejected.**
+- *Requester creates it on the fulfiller's behalf.* Inverts who is asking.
+- *Both faces in one page, tabs or columns.* Breaks "one thing to do" and makes the hard copy ambiguous.
+- *Automatic creation.* An empty flip side for every greensheet is noise.
+- *Notify the requester by email when the flip side is created.* Not agreed to; the digest covers it for those who opted in.
+
+**Consequences.**
+- The item numbers on each face are independent. "Item 3" is ambiguous without saying which face; channel messages and digests name the face by its greensheet name, which carries "Flip side of".
+- The corner is the second and last use of the fold motif. It is not to be reused for other actions.
+- Print omits the corner.

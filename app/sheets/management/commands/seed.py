@@ -52,7 +52,10 @@ class Command(BaseCommand):
 
         self.stdout.write("")
         for person in (dana, marcus):
-            link = services.issue_magic_link(person, "/", send=False)
-            self.stdout.write(f"{person.display:<16} {link.absolute_url}")
+            try:
+                link = services.issue_magic_link(person, "/", send=False)
+                self.stdout.write(f"{person.display:<16} {link.absolute_url}")
+            except services.Refused as e:
+                self.stdout.write(f"{person.display:<16} {e}")
         self.stdout.write("")
         self.stdout.write("Links work once and expire in 15 minutes. Run `manage.py seed` again for fresh ones.")

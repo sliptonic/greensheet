@@ -1,7 +1,7 @@
 [project]
 name = "greensheet"
-version = "0.0.1"
-description = "Greensheet prototype: a set of expectations one person sets for another."
+version = "0.1.0"
+description = "Greensheet: a set of expectations one person sets for another."
 requires-python = ">=3.12"
 dependencies = [
     "django>=6.0,<7",

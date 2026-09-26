@@ -2,8 +2,11 @@
 {% block title %}{{ sheet.name }} · Greensheet{% endblock %}
 {% block mainclass %}gs{% endblock %}
 {% block content %}
+{% if preview %}
+<div class="preview-bar no-print">Previewing as {{ sheet.fulfiller.display }} will see it. <a href="{{ sheet.get_absolute_url }}">Back to editing</a></div>
+{% endif %}
 <div class="top-line"><span class="mark"></span><h1>{{ sheet.name }}</h1></div>
-<p class="from">From <b>{{ sheet.requester.display }}</b> · for {{ sheet.fulfiller.display }}</p>
+<p class="from">From <b>{{ sheet.requester.display }}</b> · for {{ sheet.fulfiller.display }}{% if sheet.is_flip_side %} · <a href="{{ sheet.flip_of.get_absolute_url }}" class="no-print">flip side of {{ sheet.flip_of.name }}</a><span class="print-only-inline">flip side of {{ sheet.flip_of.name }}</span>{% endif %}</p>
 <p class="meta no-print">
   {{ items|length }} item{{ items|length|pluralize }} · {{ done_count }} complete
   {% if sheet.archived %} · archived {{ sheet.archived_at|date:"D, M j" }}{% endif %}
@@ -26,9 +29,11 @@
 {% if role == "requester" and not sheet.archived %}
 <form method="post" action="{% url 'add_item' sheet.code %}" class="add no-print">{% csrf_token %}
   <input name="title" placeholder="Add an item" required aria-label="Item title">
-  <input name="due_date" type="date" aria-label="Due date">
-  <button type="submit">Add</button>
-  <textarea name="note" rows="2" placeholder="Note, optional"></textarea>
+  <textarea name="note" rows="2" placeholder="Note, optional" aria-label="Note"></textarea>
+  <div class="add-row">
+    <label class="due-label">Due <input name="due_date" type="date" aria-label="Due date"></label>
+    <button type="submit">Add</button>
+  </div>
 </form>
 {% endif %}
 
@@ -40,6 +45,7 @@
     {% if show_completed %}<a href="?completed=hide">Hide completed</a>{% else %}<a href="?completed=show">Show completed</a>{% endif %}
   {% endif %}
   {% if role == "requester" %}
+    <a href="?preview=1">Preview as {{ sheet.fulfiller.display }}</a>
     <a href="{% url 'edit_sheet' sheet.code %}">Edit details</a>
     {% if sheet.archived %}
       <form method="post" action="{% url 'unarchive' sheet.code %}" class="inline">{% csrf_token %}<button class="linkish" type="submit">Unarchive</button></form>
@@ -50,6 +56,39 @@
   <span class="r">{{ sheet.short_url }}</span>
 </div>
 
+{% if not preview and paired or not preview and can_create_flip %}
+<a class="corner no-print" href="{% url 'flip' sheet.code %}" data-flip
+   aria-label="{% if paired %}Turn over to the {% if sheet.is_flip_side %}front{% else %}flip side{% endif %}{% else %}Turn over to create the flip side{% endif %}"
+   title="{% if paired %}{% if sheet.is_flip_side %}Front{% else %}Flip side{% endif %}{% else %}Flip side{% endif %}">
+  <svg viewBox="0 0 64 64" aria-hidden="true"><path class="under" d="M64 0v64H0z"/><path class="flap" d="M0 0h64L0 64z"/><path class="crease" d="M64 0L0 64" /></svg>
+</a>
+{% endif %}
+<script>
+(function(){
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var main = document.querySelector('main');
+  if (!main) return;
+  if (location.search.indexOf('flipped=1') !== -1) {
+    if (!reduce) {
+      main.classList.add('flip-in');
+      requestAnimationFrame(function(){ requestAnimationFrame(function(){ main.classList.remove('flip-in'); }); });
+    }
+    if (history.replaceState) history.replaceState(null, '', location.pathname);
+  }
+  var corner = document.querySelector('[data-flip]');
+  if (corner && !reduce) {
+    corner.addEventListener('click', function(e){
+      e.preventDefault();
+      var href = corner.getAttribute('href');
+      var done = false;
+      function go(){ if (!done) { done = true; location.href = href; } }
+      main.addEventListener('transitionend', go, {once:true});
+      main.classList.add('flip-out');
+      setTimeout(go, 400);
+    });
+  }
+})();
+</script>
 <div class="print-only print-tail">
   <img class="qr" src="{{ qr }}" alt="QR code to the live greensheet" width="80" height="80">
   <div class="back">Scan to open. Sign in with your email.<span class="u">{{ sheet.short_url }}</span></div>

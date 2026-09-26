@@ -20,9 +20,11 @@ Greensheet is that experience in a browser. A greensheet should be recognizable 
 
 A greensheet can live for a long time, with items added and completed as the relationship goes on. When it's finished, archive it. Both of you can still see it, but nothing changes.
 
+It has two faces. If you're the one being asked, turn the sheet over with the folded corner and set out what you need from them. The flip side works exactly the same way, with the roles reversed.
+
 It is also a sheet. Print it. Either of you gets a clean hard copy in one click, with boxes to tick, contact details spelled out, and a code that leads back to the live greensheet. You can hand a printed greensheet to someone as their invitation.
 
-Anyone can be a requester. If someone sends you a greensheet, you can turn around and make one for them.
+Anyone can be a requester. If someone sends you a greensheet, you can set one for anyone else too.
 
 ## What it is not
 
@@ -46,4 +48,4 @@ Anyone can be a requester. If someone sends you a greensheet, you can turn aroun
 
 ## Status
 
-Greenfield. Currently in the pre-planning and specification phase. Not a commercial product. Licensing undecided.
+First release. The application is in `app/`. Not a commercial product. Licensing undecided.

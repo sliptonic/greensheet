@@ -11,6 +11,7 @@ from django.db import transaction
 from django.urls import reverse
 from django.utils import timezone
 
+from . import webhooks
 from .models import (
     ApiToken,
     Block,
@@ -21,6 +22,7 @@ from .models import (
     Item,
     MagicLink,
     Person,
+    Webhook,
 )
 
 
@@ -40,7 +42,10 @@ def record(kind, *, greensheet=None, item=None, actor=None, **data):
         data.setdefault("item_title", item.title)
     if actor is not None:
         data.setdefault("actor", actor.display)
-    return Event.objects.create(kind=kind, greensheet=greensheet, item=item, actor=actor, data=data)
+    event = Event.objects.create(kind=kind, greensheet=greensheet, item=item, actor=actor, data=data)
+    if greensheet is not None:
+        transaction.on_commit(lambda: webhooks.deliver(event))
+    return event
 
 
 # ---------------------------------------------------------------- email
@@ -58,7 +63,21 @@ def subject_for(sheet, suffix=""):
 # ---------------------------------------------------------------- sign in
 
 
+def cold_signin_allowed(email):
+    """Open instance unless an allowlist is set. Invited people always pass."""
+    if not settings.ALLOWLIST:
+        return True
+    email = Person.objects.normalize(email)
+    if Person.objects.filter(email=email).exists():
+        return True
+    domain = email.rsplit("@", 1)[-1]
+    return email in settings.ALLOWLIST or domain in settings.ALLOWLIST
+
+
 def issue_magic_link(person, next_path="/", send=True):
+    recent = MagicLink.objects.filter(person=person, created_at__gte=timezone.now() - timedelta(hours=1)).count()
+    if recent >= settings.MAGIC_LINKS_PER_HOUR:
+        raise Refused("Too many sign-in links have been sent to that address in the last hour. Try again later.")
     link = MagicLink.objects.create(person=person, next=next_path or "/")
     record("link.issued", actor=person)
     if send:
@@ -200,6 +219,47 @@ def unarchive(sheet, actor):
 def _writable(sheet):
     if sheet.archived:
         raise Refused("This greensheet is archived. Unarchive it to make changes.")
+
+
+def revoke_sessions(sheet, actor):
+    """Sign the other party out everywhere. They sign back in by magic link."""
+    target = sheet.other_party(actor)
+    target.session_epoch += 1
+    target.save(update_fields=["session_epoch"])
+    record("session.revoked", greensheet=sheet, actor=actor, who=target.display)
+    return target
+
+
+# ---------------------------------------------------------------- flip side
+
+
+@transaction.atomic
+def create_flip_side(sheet, actor):
+    """The fulfiller turns the greensheet over and sets out what they need
+    from the requester. Same two people, roles reversed, paired for life."""
+    if sheet.is_flip_side:
+        raise Refused("This is already the flip side. Turn it back over to see the front.")
+    if sheet.paired is not None:
+        return sheet.paired
+    if actor.id != sheet.fulfiller_id:
+        raise Refused("Only the fulfiller can create the flip side.")
+    if sheet.requester.is_placeholder:
+        raise Refused("The requester has deleted their account.")
+    name = f"Flip side of {sheet.name}"[:200]
+    flip = Greensheet.objects.create(
+        name=name,
+        requester=sheet.fulfiller,
+        fulfiller=sheet.requester,
+        contact_email=actor.email,
+        contact_phone="",
+        flip_of=sheet,
+    )
+    # The other party is already here; no invite email. The record keeps the
+    # invite flow consistent.
+    Invite.objects.create(greensheet=flip, accepted_at=timezone.now())
+    record("flip.created", greensheet=sheet, actor=actor, flip_code=flip.code)
+    record("sheet.created", greensheet=flip, actor=actor, flip_of=sheet.code)
+    return flip
 
 
 # ---------------------------------------------------------------- items
@@ -372,6 +432,23 @@ def create_token(person, label=""):
     token = ApiToken.objects.create(person=person, label=label.strip())
     record("token.created", actor=person, label=token.label)
     return token
+
+
+# ---------------------------------------------------------------- webhooks
+
+
+def create_webhook(person, url, label=""):
+    url = url.strip()
+    if not (url.startswith("http://") or url.startswith("https://")):
+        raise Refused("The webhook URL must start with http:// or https://.")
+    hook = Webhook.objects.create(person=person, url=url, label=label.strip())
+    record("webhook.created", actor=person, label=hook.label, url=url)
+    return hook
+
+
+def delete_webhook(hook):
+    record("webhook.deleted", actor=hook.person, label=hook.label, url=hook.url)
+    hook.delete()
 
 
 # ---------------------------------------------------------------- deletion

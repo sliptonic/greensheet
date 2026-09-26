@@ -131,3 +131,49 @@ main.gs{max-width:760px;margin:0 auto;padding:44px 32px 64px;font-family:var(--s
   .print-tail .back .u{font-family:var(--mono);font-size:10pt;display:block;margin-top:2px}
   .print-tail .pg{margin-left:auto;font-family:var(--mono);font-size:8pt;color:#555}
 }
+
+/* ---------- the flip side ---------- */
+.gs .prose{max-width:62ch;margin:18px 0 0 28px}
+.gs .prose p{margin:0 0 14px}
+.flip-confirm{margin:26px 0 0 28px;font-family:var(--sans);font-size:14px}
+.flip-confirm button{background:var(--ink);color:var(--paper);border:0;padding:9px 16px;cursor:pointer}
+.print-only-inline{display:none}
+.hooks li{align-items:flex-start;font-family:var(--sans);font-size:15px}
+
+/* the folded corner, bottom right */
+.corner{position:fixed;right:0;bottom:0;width:64px;height:64px;display:block;z-index:5;transition:width .18s ease,height .18s ease}
+.corner svg{width:100%;height:100%;display:block}
+.corner .under{fill:var(--sheet)}
+.corner .flap{fill:#E4EBDF}
+.corner .crease{fill:none;stroke:rgba(0,0,0,.18);stroke-width:1}
+.corner:hover,.corner:focus-visible{width:84px;height:84px;outline:none}
+.corner:focus-visible .flap{fill:#D6E0D0}
+
+/* turning the sheet over */
+body{perspective:1600px}
+main{transform-origin:50% 50%;backface-visibility:hidden}
+main.flip-out{transition:transform .28s ease-in;transform:rotateY(90deg)}
+main.flip-in{transform:rotateY(-90deg)}
+main:not(.flip-in):not(.flip-out){transition:transform .28s ease-out}
+@media (prefers-reduced-motion:reduce){
+  main,main.flip-out,main.flip-in{transition:none;transform:none}
+}
+@media print{
+  .corner{display:none}
+  .print-only-inline{display:inline}
+  main{transform:none !important;transition:none !important}
+}
+
+/* ---------- home: create ---------- */
+.create-row{margin:12px 0 0}
+button.primary{background:var(--ink);color:var(--paper);border:0;padding:9px 16px;cursor:pointer}
+#create-form h2{margin-top:6px}
+
+/* ---------- add item: title, note, then date and Add ---------- */
+.add{display:grid;grid-template-columns:1fr;gap:10px;margin:22px 0 0 28px;font-family:var(--sans)}
+.add .add-row{display:flex;align-items:center;gap:14px}
+.add .due-label{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-soft)}
+
+/* ---------- preview ---------- */
+.preview-bar{font-family:var(--sans);font-size:13px;color:var(--ink-soft);border:1px dashed var(--rule);padding:8px 12px;margin:0 0 22px}
+.preview-bar a{color:var(--ink)}

@@ -33,8 +33,8 @@ jobs:
 
       - uses: docker/build-push-action@v6
         with:
-          context: prototype
-          file: prototype/Dockerfile
+          context: app
+          file: app/Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

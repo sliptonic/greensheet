@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import ApiToken, Block, DigestSubscription, Event, Greensheet, Invite, Item, MagicLink, Person
+from .models import ApiToken, Block, DigestSubscription, Event, Greensheet, Invite, Item, MagicLink, Person, Webhook
 
 
 @admin.register(Person)
@@ -19,7 +19,7 @@ class ItemInline(admin.TabularInline):
 
 @admin.register(Greensheet)
 class GreensheetAdmin(admin.ModelAdmin):
-    list_display = ("name", "code", "requester", "fulfiller", "created_at", "archived_at")
+    list_display = ("name", "code", "requester", "fulfiller", "flip_of", "created_at", "archived_at")
     search_fields = ("name", "code", "requester__email", "fulfiller__email")
     inlines = [ItemInline]
 
@@ -43,5 +43,6 @@ admin.site.register(Block)
 admin.site.register(MagicLink)
 admin.site.register(DigestSubscription)
 admin.site.register(ApiToken)
+admin.site.register(Webhook)
 admin.site.site_header = "Greensheet operator"
 admin.site.site_title = "Greensheet"

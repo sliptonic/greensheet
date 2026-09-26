@@ -91,6 +91,8 @@ def sheet_json(s, role, with_items=True):
         "contact": {"email": s.contact_email, "phone": s.contact_phone},
         "archived": s.archived,
         "created_at": s.created_at.isoformat(),
+        "flip_of": s.flip_of.code if s.flip_of_id else None,
+        "flip_side": (s.paired.code if (s.paired and not s.is_flip_side) else None),
     }
     if with_items:
         d["items"] = [item_json(i) for i in s.items.all()]

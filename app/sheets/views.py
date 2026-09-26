@@ -12,7 +12,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_http_methods, require_POST
 
 from . import services
-from .models import ApiToken, Greensheet, Person
+from .models import ApiToken, Greensheet, Person, Webhook
 from .services import Refused
 
 # ---------------------------------------------------------------- helpers
@@ -70,14 +70,18 @@ def _item_response(request, sheet, role, item):
     return redirect(sheet)
 
 
-def _sheet_context(request, sheet, role):
+def _sheet_context(request, sheet, role, preview=False):
     show_completed = request.session.get(f"show_completed:{sheet.code}", True)
     items = list(sheet.items.all())
     qr = segno.make(sheet.absolute_url, error="m").svg_data_uri(scale=4, border=1, dark="#111111", light=None)
     sub = services.digest_for(sheet, request.user)
+    paired = sheet.paired
     return {
         "sheet": sheet,
         "role": role,
+        "paired": paired,
+        "preview": preview,
+        "can_create_flip": paired is None and role == "fulfiller" and not sheet.is_flip_side and not preview,
         "items": items,
         "open_count": sum(1 for i in items if not i.complete),
         "done_count": sum(1 for i in items if i.complete),
@@ -100,8 +104,15 @@ def signin(request):
         if "@" not in email:
             messages.error(request, "Enter your email address.")
             return redirect("signin")
+        if not services.cold_signin_allowed(email):
+            messages.error(request, "This instance is by invitation. Ask someone here to set a greensheet for you.")
+            return redirect("signin")
         person, _ = Person.objects.get_or_create_by_email(email)
-        link = services.issue_magic_link(person, request.GET.get("next") or "/")
+        try:
+            link = services.issue_magic_link(person, request.GET.get("next") or "/")
+        except Refused as e:
+            messages.error(request, str(e))
+            return redirect("signin")
         return render(
             request,
             "sheets/check_email.html",
@@ -115,6 +126,7 @@ def consume(request, token):
     if link is None:
         return render(request, "sheets/link_bad.html", status=410)
     login(request, link.person, backend="django.contrib.auth.backends.ModelBackend")
+    request.session["epoch"] = link.person.session_epoch
     nxt = link.next if link.next.startswith("/") else "/"
     return redirect(nxt)
 
@@ -188,6 +200,22 @@ def tokens(request):
 
 @login_required
 @require_http_methods(["GET", "POST"])
+def webhooks(request):
+    if request.method == "POST":
+        if request.POST.get("delete"):
+            hook = get_object_or_404(Webhook, person=request.user, pk=request.POST["delete"])
+            services.delete_webhook(hook)
+        else:
+            try:
+                services.create_webhook(request.user, request.POST.get("url", ""), request.POST.get("label", ""))
+            except Refused as e:
+                messages.error(request, str(e))
+        return redirect("webhooks")
+    return render(request, "sheets/webhooks.html", {"hooks": request.user.webhooks.order_by("created_at")})
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
 def delete_me(request):
     if request.method == "POST" and request.POST.get("confirm") == request.user.email:
         person = request.user
@@ -205,7 +233,10 @@ def sheet(request, sheet, role):
     if request.GET.get("completed") in ("show", "hide"):
         request.session[f"show_completed:{sheet.code}"] = request.GET["completed"] == "show"
         return redirect(sheet)
-    return render(request, "sheets/sheet.html", _sheet_context(request, sheet, role))
+    preview = role == "requester" and request.GET.get("preview") == "1"
+    if preview:
+        role = "fulfiller"
+    return render(request, "sheets/sheet.html", _sheet_context(request, sheet, role, preview=preview))
 
 
 @party
@@ -225,6 +256,35 @@ def edit_sheet(request, sheet, role):
         )
         return redirect(sheet)
     return render(request, "sheets/edit_sheet.html", {"sheet": sheet, "role": role})
+
+
+@party
+@require_http_methods(["GET", "POST"])
+def flip(request, sheet, role):
+    """Turn the greensheet over. If the flip side exists, go there. If not
+    and you are the fulfiller, explain and offer to create it."""
+    paired = sheet.paired
+    if paired is not None:
+        return redirect(paired.get_absolute_url() + "?flipped=1")
+    if role != "fulfiller" or sheet.is_flip_side:
+        raise Http404
+    if request.method == "POST":
+        try:
+            flip_sheet = services.create_flip_side(sheet, request.user)
+        except Refused as e:
+            messages.error(request, str(e))
+            return redirect(sheet)
+        return redirect(flip_sheet.get_absolute_url() + "?flipped=1")
+    return render(request, "sheets/flip.html", {"sheet": sheet, "role": role})
+
+
+@party
+@requester_only
+@require_POST
+def revoke(request, sheet, role):
+    target = services.revoke_sessions(sheet, request.user)
+    messages.success(request, f"{target.display} has been signed out everywhere.")
+    return redirect(sheet)
 
 
 @party

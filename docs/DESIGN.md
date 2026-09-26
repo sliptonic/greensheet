@@ -125,6 +125,15 @@ Flow:
 
 Paper and screen stay reconcilable through item numbers. A fulfiller who ticked boxes on paper can find the same items on screen by number. A phone call about "item 4" means the same thing to both people.
 
+### The corner
+
+A greensheet has two faces. The folded corner at the bottom right is how a person turns it over. It reuses the fold from the mark and nothing else in the product uses that motif.
+
+- Fixed at the bottom right of the page, small, quiet. It grows slightly on hover. It shows the green underside of the sheet, which is the other face.
+- Clicking turns the sheet over: the page rotates away, the other face rotates in. Under reduced motion it simply navigates.
+- For the fulfiller of a front with no flip side, the corner leads to a page that explains what the flip side is and asks before creating anything. Nothing is created by the click alone.
+- The corner does not appear on the front for the requester until the flip side exists, and never appears on a hard copy.
+
 ### Link preview
 
 When a greensheet URL is pasted into a chat, the preview is the mark and `<name> · Greensheet`. Never the item contents.

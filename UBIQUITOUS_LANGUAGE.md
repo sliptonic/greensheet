@@ -120,7 +120,11 @@ An immutable record of something that happened on the instance: a greensheet or 
 
 ### Flip side
 
-A greensheet created with the roles of an existing greensheet reversed, paired with it. Captures the fulfiller's expectations of the requester. Adopted as a concept; the pairing feature is deferred. Since any person can be a requester, a fulfiller can create the equivalent unpaired greensheet today.
+The second face of a greensheet: a greensheet with the same two people and the roles reversed, paired with the first for life. The original is the **front**. The fulfiller of the front creates the flip side by turning the sheet over with the **corner**; the requester cannot. A flip side has no flip side of its own. Each face is otherwise an ordinary greensheet with its own items, item numbers, history, and hard copy.
+
+### Corner
+
+The folded corner at the bottom right of a greensheet page. Clicking it turns the sheet over: to the other face if it exists, or, for the fulfiller of a front with no flip side yet, to the page that explains and offers to create one. The corner never appears on a hard copy and is not used for anything else.
 
 ## Explicit non-concepts
 

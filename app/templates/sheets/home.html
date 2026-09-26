@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Greensheet{% endblock %}
+{% block content %}
+<section class="narrow">
+  <h1>Your greensheets</h1>
+
+  <h2>For you</h2>
+  {% if for_me %}
+  <ul class="sheetlist">
+    {% for s in for_me %}
+    <li><a href="{{ s.get_absolute_url }}"><span class="mark sm"></span>{{ s.name }}</a><span class="soft">from {{ s.requester.display }}{% if s.is_flip_side %} · flip side{% endif %}{% if s.archived %} · archived{% endif %}</span></li>
+    {% endfor %}
+  </ul>
+  {% else %}<p class="soft">None yet.</p>{% endif %}
+
+  <h2>Created by you</h2>
+  {% if set_by_me %}
+  <ul class="sheetlist">
+    {% for s in set_by_me %}
+    <li><a href="{{ s.get_absolute_url }}"><span class="mark sm"></span>{{ s.name }}</a><span class="soft">for {{ s.fulfiller.display }}{% if s.is_flip_side %} · flip side{% endif %}{% if s.archived %} · archived{% endif %}</span></li>
+    {% endfor %}
+  </ul>
+  {% else %}<p class="soft">None yet.</p>{% endif %}
+
+  <p class="create-row"><button type="button" class="primary" id="create-toggle" aria-expanded="false" aria-controls="create-form">Create new</button></p>
+  <form method="post" action="{% url 'new_sheet' %}" class="stack" id="create-form" hidden>{% csrf_token %}
+    <h2>New greensheet</h2>
+    {% if not user.name %}<label>Your name <input name="your_name" required></label>{% endif %}
+    <label>Name of the greensheet <input name="name" required placeholder="2025 tax engagement"></label>
+    <label>For (their email) <input type="email" name="fulfiller_email" required></label>
+    <label>Their name <input name="fulfiller_name"></label>
+    <label>Your contact email for this greensheet <input type="email" name="contact_email" value="{{ user.email }}"></label>
+    <label>Your phone for this greensheet <span class="soft">optional</span> <input name="contact_phone" placeholder="(555) 555-0100"></label>
+    <div class="row"><button type="submit">Create and send the invite</button> <button type="button" class="linkish" id="create-cancel">Cancel</button></div>
+  </form>
+  <script>
+  (function(){
+    var t=document.getElementById('create-toggle'), f=document.getElementById('create-form'), c=document.getElementById('create-cancel');
+    function show(on){ f.hidden=!on; t.hidden=on; t.setAttribute('aria-expanded', on?'true':'false'); if(on){ var i=f.querySelector('input'); if(i) i.focus(); } }
+    t.addEventListener('click', function(){ show(true); });
+    c.addEventListener('click', function(){ show(false); });
+    {% if messages %}show(true);{% endif %}
+  })();
+  </script>
+
+  <p class="soft small"><a href="{% url 'tokens' %}">API tokens</a> · <a href="{% url 'webhooks' %}">Webhooks</a> · <a href="{% url 'delete_me' %}">Delete my account</a></p>
+</section>
+{% endblock %}

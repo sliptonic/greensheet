@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Flip side · {{ sheet.name }} · Greensheet{% endblock %}
+{% block mainclass %}gs{% endblock %}
+{% block content %}
+<div class="top-line"><span class="mark"></span><h1>The flip side</h1></div>
+<p class="from">of <b>{{ sheet.name }}</b> · from {{ sheet.requester.display }}</p>
+
+<div class="prose">
+  <p>A greensheet has two faces. On the front, {{ sheet.requester.display }} sets out what they need from you.</p>
+  <p>On the flip side, you set out what you need from {{ sheet.requester.display }}. It works the same way: you add items, they mark them done, and either of you can reach the other about any item.</p>
+  <p>Nothing on the front changes. {{ sheet.requester.display }} will see the flip side the next time they open the greensheet, and in their daily summary if they've asked for one. Once created, the two faces stay paired.</p>
+</div>
+
+<form method="post" class="row flip-confirm">{% csrf_token %}
+  <button type="submit">Create the flip side</button>
+  <a href="{{ sheet.get_absolute_url }}">Not now</a>
+</form>
+{% endblock %}

@@ -66,6 +66,9 @@ class Person(AbstractBaseUser, PermissionsMixin):
     is_staff = models.BooleanField(default=False)
     is_placeholder = models.BooleanField(default=False)
     created_at = models.DateTimeField(default=timezone.now)
+    # Bumped to sign this person out everywhere. Sessions carry the value
+    # they were created with; a mismatch ends the session.
+    session_epoch = models.PositiveIntegerField(default=0)
 
     USERNAME_FIELD = "email"
     objects = PersonManager()
@@ -91,12 +94,34 @@ class Greensheet(models.Model):
     created_at = models.DateTimeField(default=timezone.now)
     archived_at = models.DateTimeField(null=True, blank=True)
     next_item_number = models.PositiveIntegerField(default=1)
+    # The flip side: a greensheet with the roles reversed, paired with this
+    # one. Only an original has a flip side; a flip side points at its original.
+    flip_of = models.OneToOneField(
+        "self", null=True, blank=True, on_delete=models.SET_NULL, related_name="flip_side"
+    )
 
     class Meta:
         ordering = ["-created_at"]
 
     def __str__(self):
         return self.name
+
+    @property
+    def is_flip_side(self):
+        return self.flip_of_id is not None
+
+    @property
+    def paired(self):
+        """The other face of this greensheet, or None."""
+        if self.flip_of_id:
+            return self.flip_of
+        try:
+            return self.flip_side
+        except Greensheet.DoesNotExist:
+            return None
+
+    def other_party(self, person):
+        return self.fulfiller if person.id == self.requester_id else self.requester
 
     @property
     def archived(self):
@@ -203,6 +228,24 @@ class DigestSubscription(models.Model):
         constraints = [models.UniqueConstraint(fields=["greensheet", "person"], name="digest_unique")]
 
 
+class Webhook(models.Model):
+    """Outbound bridge. Every event on a greensheet the person is party to is
+    POSTed to the URL, signed with the secret."""
+
+    person = models.ForeignKey(Person, on_delete=models.CASCADE, related_name="webhooks")
+    url = models.URLField(max_length=500)
+    label = models.CharField(max_length=100, blank=True)
+    secret = models.CharField(max_length=64, default=new_token)
+    active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    last_at = models.DateTimeField(null=True, blank=True)
+    last_status = models.IntegerField(null=True, blank=True)
+    last_error = models.CharField(max_length=200, blank=True)
+
+    def __str__(self):
+        return self.label or self.url
+
+
 class ApiToken(models.Model):
     person = models.ForeignKey(Person, on_delete=models.CASCADE, related_name="api_tokens")
     key = models.CharField(max_length=64, unique=True, default=new_token)
@@ -239,6 +282,10 @@ class Event(models.Model):
         ("digest.sent", "daily summary sent"),
         ("token.created", "API token created"),
         ("person.deleted", "person deleted"),
+        ("flip.created", "flip side created"),
+        ("session.revoked", "signed out everywhere"),
+        ("webhook.created", "webhook created"),
+        ("webhook.deleted", "webhook deleted"),
     ]
 
     at = models.DateTimeField(default=timezone.now, db_index=True)
@@ -310,4 +357,8 @@ class Event(models.Model):
             return f"daily summary sent to {self.data.get('to', '')}".strip()
         if k == "link.consumed":
             return f"{who} signed in"
+        if k == "flip.created":
+            return f"{who} created the flip side"
+        if k == "session.revoked":
+            return f"{who} signed {self.data.get('who', 'the other party')} out everywhere"
         return f"{who}: {self.get_kind_display()}"

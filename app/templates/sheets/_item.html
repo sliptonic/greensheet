@@ -1,7 +1,7 @@
 {% load sheet_extras %}
 <li class="item{% if item.complete %} done{% endif %}{% if item.overdue %} overdue{% endif %}" id="item-{{ item.number }}">
   <span class="n">{{ item.number }}</span>
-  {% if sheet.archived %}
+  {% if sheet.archived or preview %}
     <span class="box static" aria-hidden="true"></span>
   {% elif item.complete %}
     <form method="post" action="{% url 'reopen' sheet.code item.number %}" hx-post="{% url 'reopen' sheet.code item.number %}" hx-target="#item-{{ item.number }}" hx-swap="outerHTML">{% csrf_token %}
@@ -20,6 +20,7 @@
         <span class="doneby">completed{% if item.completed_by %} by {% if item.completed_by == user %}you{% else %}{{ item.completed_by.display }}{% endif %}{% endif %}, {{ item.completed_at|date:"D, M j" }}</span>
       {% else %}
         {% if item.due_date %}<span class="due">due {{ item.due_date|date:"D, M j" }}</span>{% endif %}
+        {% if role == "fulfiller" %}
         <span class="ch no-print">
           <a href="{{ sheet|channel:item|get:'email' }}">Email</a>
           {% if sheet.contact_phone %}
@@ -27,6 +28,7 @@
           <a href="{{ sheet|channel:item|get:'tel' }}">Call</a>
           {% endif %}
         </span>
+        {% endif %}
       {% endif %}
       {% if role == "requester" and not sheet.archived %}
         <span class="edit no-print">

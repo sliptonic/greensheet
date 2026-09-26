@@ -7,8 +7,8 @@ __pycache__/
 .venv/
 
 # Prototype runtime
-prototype/data/
-prototype/staticfiles/
+app/data/
+app/staticfiles/
 *.sqlite3
 *.sqlite3-wal
 *.sqlite3-shm

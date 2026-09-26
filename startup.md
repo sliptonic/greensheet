@@ -6,7 +6,7 @@ The name comes from managing an organization where busy people routinely dropped
 
 ## Project Status
 
-This is a greenfield project. It is unrelated to any other projects or sessions. The spec is drafted and a working prototype exists in `prototype/`. There are no users, contracts, or external constraints.
+This is a greenfield project. It is unrelated to any other projects or sessions. The spec is drafted and the application lives in `app/`. There are no users, contracts, or external constraints.
 
 It is not intended to be a commercial product at this time. It is intended to be simple to self-host: reliable, but not mission critical. Licensing is undecided; the project is private for now.
 
@@ -19,7 +19,7 @@ It is not intended to be a commercial product at this time. It is intended to be
 - `docs/LANDSCAPE.md` surveys existing tools against the two defining requirements: low friction and asymmetry of action.
 - `docs/DESIGN.md` holds the design principles derived from the origin story: recognizable, uniform, one thing to do, nothing hidden, never more than agreed, feels like paper. Consult it before designing any surface.
 - Additional research and planning documents may be created under `docs/` as needed. This file may be edited as needed.
-- `prototype/` is a working Django implementation of the spec. Its `README.md` says how to run it and what it does not yet do. Keep it consistent with the decisions; when the prototype and a decision disagree, the decision wins or gets a superseding entry.
+- `app/` is the Django implementation. Its `README.md` says how to run it and what it does not yet do. Keep it consistent with the decisions; when the code and a decision disagree, the decision wins or gets a superseding entry.
 
 ## Brief Description
 
@@ -87,7 +87,7 @@ Design decisions, with rationale and rejected alternatives, are recorded in `doc
 
 ### Direction
 
-Not formally decided. The prototype in `prototype/` is Django, SQLite, and htmx, per the leaning recorded in D15. See `docs/RESEARCH.md` for the comparison.
+Django, SQLite, and htmx. Decided in D15 with the first release. See `docs/RESEARCH.md` for the comparison.
 
 ## Roles
 
