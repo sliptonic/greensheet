@@ -1,0 +1,14 @@
+# Personal deployment notes. Not part of the project.
+DEPLOY.md
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Prototype runtime
+prototype/data/
+prototype/staticfiles/
+*.sqlite3
+*.sqlite3-wal
+*.sqlite3-shm
