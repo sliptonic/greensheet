@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Edit · {{ sheet.name }} · Greensheet{% endblock %}
+{% block content %}
+<section class="narrow">
+  <h1>Edit greensheet details</h1>
+  <form method="post" class="stack">{% csrf_token %}
+    <label>Name <input name="name" value="{{ sheet.name }}" required></label>
+    <label>Your contact email for this greensheet <input type="email" name="contact_email" value="{{ sheet.contact_email }}" required></label>
+    <label>Your phone for this greensheet <span class="soft">optional</span> <input name="contact_phone" value="{{ sheet.contact_phone }}"></label>
+    <div class="row"><button type="submit">Save</button> <a href="{{ sheet.get_absolute_url }}">Cancel</a></div>
+  </form>
+  <p class="soft small">The fulfiller, {{ sheet.fulfiller.display }}, cannot be changed. To hand this to someone else, archive it and set a new greensheet.</p>
+</section>
+{% endblock %}

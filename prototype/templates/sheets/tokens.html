@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}API tokens · Greensheet{% endblock %}
+{% block content %}
+<section class="narrow">
+  <h1>API tokens</h1>
+  <p>A program holding one of these can do what you can do. Send it as <code>Authorization: Bearer &lt;token&gt;</code>.</p>
+  {% if new_key %}
+  <div class="devnote"><p><b>New token.</b> Copy it now; it is not shown again.</p><p><code>{{ new_key }}</code></p></div>
+  {% endif %}
+  <form method="post" class="stack">{% csrf_token %}
+    <label>Label <input name="label" placeholder="what this token is for"></label>
+    <button type="submit">Create token</button>
+  </form>
+  {% if tokens %}
+  <ul class="sheetlist">
+    {% for t in tokens %}
+    <li><span>{{ t.label|default:"(no label)" }} · created {{ t.created_at|date:"D, M j" }}</span>
+      <form method="post" class="inline">{% csrf_token %}<input type="hidden" name="revoke" value="{{ t.id }}"><button class="linkish" type="submit">Revoke</button></form></li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+  <p class="soft small"><a href="{% url 'home' %}">Back</a></p>
+</section>
+{% endblock %}

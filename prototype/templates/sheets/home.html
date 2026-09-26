@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Greensheet{% endblock %}
+{% block content %}
+<section class="narrow">
+  <h1>Your greensheets</h1>
+
+  <h2>For you</h2>
+  {% if for_me %}
+  <ul class="sheetlist">
+    {% for s in for_me %}
+    <li><a href="{{ s.get_absolute_url }}"><span class="mark sm"></span>{{ s.name }}</a><span class="soft">from {{ s.requester.display }}{% if s.archived %} · archived{% endif %}</span></li>
+    {% endfor %}
+  </ul>
+  {% else %}<p class="soft">None yet.</p>{% endif %}
+
+  <h2>Set by you</h2>
+  {% if set_by_me %}
+  <ul class="sheetlist">
+    {% for s in set_by_me %}
+    <li><a href="{{ s.get_absolute_url }}"><span class="mark sm"></span>{{ s.name }}</a><span class="soft">for {{ s.fulfiller.display }}{% if s.archived %} · archived{% endif %}</span></li>
+    {% endfor %}
+  </ul>
+  {% else %}<p class="soft">None yet.</p>{% endif %}
+
+  <h2>Set a new greensheet</h2>
+  <form method="post" action="{% url 'new_sheet' %}" class="stack">{% csrf_token %}
+    {% if not user.name %}<label>Your name <input name="your_name" required></label>{% endif %}
+    <label>Name of the greensheet <input name="name" required placeholder="2025 tax engagement"></label>
+    <label>For (their email) <input type="email" name="fulfiller_email" required></label>
+    <label>Their name <input name="fulfiller_name"></label>
+    <label>Your contact email for this greensheet <input type="email" name="contact_email" value="{{ user.email }}"></label>
+    <label>Your phone for this greensheet <span class="soft">optional</span> <input name="contact_phone" placeholder="(555) 555-0100"></label>
+    <button type="submit">Create and send the invite</button>
+  </form>
+
+  <p class="soft small"><a href="{% url 'tokens' %}">API tokens</a> · <a href="{% url 'delete_me' %}">Delete my account</a></p>
+</section>
+{% endblock %}

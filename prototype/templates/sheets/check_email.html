@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Check your email · Greensheet{% endblock %}
+{% block content %}
+<section class="narrow">
+  <h1>Check your email</h1>
+  <p>A sign-in link was sent to <b>{{ email }}</b>. It works once and expires in 15 minutes.</p>
+  {% if link %}
+  <div class="devnote">
+    <p><b>Development instance.</b> The email went to the console. Here is the link:</p>
+    <p><a href="{{ link.absolute_url }}">{{ link.absolute_url }}</a></p>
+  </div>
+  {% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}{{ sheet.name }} · Greensheet{% endblock %}
+{% block mainclass %}gs{% endblock %}
+{% block content %}
+<div class="top-line"><span class="mark"></span><h1>{{ sheet.name }}</h1></div>
+<p class="from">From <b>{{ sheet.requester.display }}</b> · for {{ sheet.fulfiller.display }}</p>
+<p class="meta no-print">
+  {{ items|length }} item{{ items|length|pluralize }} · {{ done_count }} complete
+  {% if sheet.archived %} · archived {{ sheet.archived_at|date:"D, M j" }}{% endif %}
+</p>
+
+<div class="print-only print-head">
+  <p>{{ sheet.contact_email }}{% if sheet.contact_phone %} · {{ sheet.contact_phone }}{% endif %}</p>
+  <p class="asof">AS OF {{ now|date:"D, M j Y, g:i A"|upper }}</p>
+</div>
+
+<ol class="items">
+  {% for item in items %}
+    {% if show_completed or not item.complete %}
+      {% include "sheets/_item.html" %}
+    {% endif %}
+  {% endfor %}
+  {% if not items %}<li class="item empty"><span></span><span></span><p class="soft">No items yet.</p></li>{% endif %}
+</ol>
+
+{% if role == "requester" and not sheet.archived %}
+<form method="post" action="{% url 'add_item' sheet.code %}" class="add no-print">{% csrf_token %}
+  <input name="title" placeholder="Add an item" required aria-label="Item title">
+  <input name="due_date" type="date" aria-label="Due date">
+  <button type="submit">Add</button>
+  <textarea name="note" rows="2" placeholder="Note, optional"></textarea>
+</form>
+{% endif %}
+
+<div class="foot no-print">
+  <a href="{% url 'history' sheet.code %}">History</a>
+  <a href="#" onclick="window.print();return false;">Print</a>
+  <form method="post" action="{% url 'digest_toggle' sheet.code %}" class="inline">{% csrf_token %}<button class="linkish" type="submit">Daily summary: {% if digest.enabled %}on{% else %}off{% endif %}</button></form>
+  {% if done_count %}
+    {% if show_completed %}<a href="?completed=hide">Hide completed</a>{% else %}<a href="?completed=show">Show completed</a>{% endif %}
+  {% endif %}
+  {% if role == "requester" %}
+    <a href="{% url 'edit_sheet' sheet.code %}">Edit details</a>
+    {% if sheet.archived %}
+      <form method="post" action="{% url 'unarchive' sheet.code %}" class="inline">{% csrf_token %}<button class="linkish" type="submit">Unarchive</button></form>
+    {% else %}
+      <form method="post" action="{% url 'archive' sheet.code %}" class="inline">{% csrf_token %}<button class="linkish" type="submit">Archive</button></form>
+    {% endif %}
+  {% endif %}
+  <span class="r">{{ sheet.short_url }}</span>
+</div>
+
+<div class="print-only print-tail">
+  <img class="qr" src="{{ qr }}" alt="QR code to the live greensheet" width="80" height="80">
+  <div class="back">Scan to open. Sign in with your email.<span class="u">{{ sheet.short_url }}</span></div>
+  <div class="pg">{{ sheet.name }}</div>
+</div>
+{% endblock %}

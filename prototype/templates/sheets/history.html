@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}History · {{ sheet.name }} · Greensheet{% endblock %}
+{% block mainclass %}gs{% endblock %}
+{% block content %}
+<div class="top-line"><span class="mark"></span><h1>{{ sheet.name }}</h1></div>
+<p class="from">History · <a href="{{ sheet.get_absolute_url }}">back to the greensheet</a></p>
+<ol class="history">
+  {% for e in events %}
+  <li><span class="when">{{ e.at|date:"D, M j, g:i A" }}</span><span class="what">{{ e.description }}</span></li>
+  {% empty %}
+  <li class="soft">Nothing yet.</li>
+  {% endfor %}
+</ol>
+{% endblock %}

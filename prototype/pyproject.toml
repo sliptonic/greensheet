@@ -1,0 +1,14 @@
+[project]
+name = "greensheet"
+version = "0.0.1"
+description = "Greensheet prototype: a set of expectations one person sets for another."
+requires-python = ">=3.12"
+dependencies = [
+    "django>=6.0,<7",
+    "segno>=1.6",
+    "gunicorn>=23",
+    "whitenoise>=6.8",
+]
+
+[tool.uv]
+package = false

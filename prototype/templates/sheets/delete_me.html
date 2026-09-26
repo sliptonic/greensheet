@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Delete account · Greensheet{% endblock %}
+{% block content %}
+<section class="narrow">
+  <h1>Delete your account</h1>
+  <p>Greensheets you set are deleted. Greensheets set for you stay with the requester, with your name replaced by a placeholder. The history of what happened remains.</p>
+  <form method="post" class="stack">{% csrf_token %}
+    <label>Type your email to confirm <input name="confirm" required></label>
+    <div class="row"><button type="submit">Delete my account</button> <a href="{% url 'home' %}">Cancel</a></div>
+  </form>
+</section>
+{% endblock %}

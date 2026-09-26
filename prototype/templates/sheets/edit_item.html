@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Edit item {{ item.number }} · {{ sheet.name }} · Greensheet{% endblock %}
+{% block content %}
+<section class="narrow">
+  <h1>Item {{ item.number }}</h1>
+  <form method="post" class="stack">{% csrf_token %}
+    <label>Title <input name="title" value="{{ item.title }}" required></label>
+    <label>Note <textarea name="note" rows="4">{{ item.note }}</textarea></label>
+    <label>Due date <input type="date" name="due_date" value="{{ item.due_date|date:'Y-m-d' }}"></label>
+    <div class="row"><button type="submit">Save</button> <a href="{{ sheet.get_absolute_url }}">Cancel</a></div>
+  </form>
+</section>
+{% endblock %}

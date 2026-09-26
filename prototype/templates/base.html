@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}Greensheet{% endblock %}</title>
+<link rel="icon" href="{{ STATIC_URL|default:'/static/' }}mark.svg" type="image/svg+xml">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;500;600&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="/static/greensheet.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/htmx/2.0.4/htmx.min.js" defer></script>
+</head>
+<body hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+<header class="top no-print">
+  <a class="brand" href="{% url 'home' %}"><span class="mark"></span>Greensheet</a>
+  {% if user.is_authenticated %}
+  <form method="post" action="{% url 'signout' %}" class="who">{% csrf_token %}
+    <span>{{ user.email }}</span>
+    <button type="submit" class="linkish">Sign out</button>
+  </form>
+  {% endif %}
+</header>
+{% if messages %}
+<div class="messages no-print">{% for m in messages %}<p class="msg {{ m.tags }}">{{ m }}</p>{% endfor %}</div>
+{% endif %}
+<main class="{% block mainclass %}page{% endblock %}">
+{% block content %}{% endblock %}
+</main>
+</body>
+</html>

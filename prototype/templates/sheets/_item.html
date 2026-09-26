@@ -1,0 +1,39 @@
+{% load sheet_extras %}
+<li class="item{% if item.complete %} done{% endif %}{% if item.overdue %} overdue{% endif %}" id="item-{{ item.number }}">
+  <span class="n">{{ item.number }}</span>
+  {% if sheet.archived %}
+    <span class="box static" aria-hidden="true"></span>
+  {% elif item.complete %}
+    <form method="post" action="{% url 'reopen' sheet.code item.number %}" hx-post="{% url 'reopen' sheet.code item.number %}" hx-target="#item-{{ item.number }}" hx-swap="outerHTML">{% csrf_token %}
+      <button type="submit" class="box" aria-label="Reopen item {{ item.number }}" title="Reopen"></button>
+    </form>
+  {% else %}
+    <form method="post" action="{% url 'complete' sheet.code item.number %}" hx-post="{% url 'complete' sheet.code item.number %}" hx-target="#item-{{ item.number }}" hx-swap="outerHTML">{% csrf_token %}
+      <button type="submit" class="box" aria-label="Complete item {{ item.number }}" title="Mark complete"></button>
+    </form>
+  {% endif %}
+  <div>
+    <p class="t">{{ item.title }}</p>
+    {% if item.note %}<p class="note">{{ item.note|urlize|linebreaksbr }}</p>{% endif %}
+    <div class="row">
+      {% if item.complete %}
+        <span class="doneby">completed{% if item.completed_by %} by {% if item.completed_by == user %}you{% else %}{{ item.completed_by.display }}{% endif %}{% endif %}, {{ item.completed_at|date:"D, M j" }}</span>
+      {% else %}
+        {% if item.due_date %}<span class="due">due {{ item.due_date|date:"D, M j" }}</span>{% endif %}
+        <span class="ch no-print">
+          <a href="{{ sheet|channel:item|get:'email' }}">Email</a>
+          {% if sheet.contact_phone %}
+          <a href="{{ sheet|channel:item|get:'sms' }}">Text</a>
+          <a href="{{ sheet|channel:item|get:'tel' }}">Call</a>
+          {% endif %}
+        </span>
+      {% endif %}
+      {% if role == "requester" and not sheet.archived %}
+        <span class="edit no-print">
+          <a href="{% url 'edit_item' sheet.code item.number %}">Edit</a>
+          <form method="post" action="{% url 'delete_item' sheet.code item.number %}" class="inline" hx-post="{% url 'delete_item' sheet.code item.number %}" hx-target="#item-{{ item.number }}" hx-swap="outerHTML" hx-confirm="Delete item {{ item.number }}?">{% csrf_token %}<button type="submit" class="linkish">Delete</button></form>
+        </span>
+      {% endif %}
+    </div>
+  </div>
+</li>
