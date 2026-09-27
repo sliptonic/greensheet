@@ -178,3 +178,13 @@ button.primary{background:var(--ink);color:var(--paper);border:0;padding:9px 16p
 /* ---------- preview ---------- */
 .preview-bar{font-family:var(--sans);font-size:13px;color:var(--ink-soft);border:1px dashed var(--rule);padding:8px 12px;margin:0 0 22px}
 .preview-bar a{color:var(--ink)}
+
+/* ---------- channels by device ---------- */
+html.desktop .mobile-only{display:none}
+.ch{position:relative;align-items:baseline}
+.ch-via{background:none;border:0;padding:0;font:inherit;font-size:12px;color:var(--ink-faint);cursor:pointer;border-bottom:1px solid transparent}
+.ch-via:hover{color:var(--ink);border-bottom-color:var(--ink)}
+.ch-menu{position:absolute;left:0;top:100%;margin-top:6px;z-index:6;display:grid;background:#fff;border:1px solid var(--rule);box-shadow:0 8px 24px -12px rgba(0,0,0,.35);min-width:220px;padding:6px 0}
+.ch-menu-title{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-faint);padding:6px 12px 4px}
+.ch-menu button{background:none;border:0;text-align:left;font:inherit;font-size:14px;color:var(--ink);padding:7px 12px;cursor:pointer}
+.ch-menu button:hover,.ch-menu button:focus-visible{background:var(--paper);outline:none}

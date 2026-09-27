@@ -332,3 +332,18 @@ Full specification of the hard copy is in `docs/DESIGN.md` under Surfaces.
 - The item numbers on each face are independent. "Item 3" is ambiguous without saying which face; channel messages and digests name the face by its greensheet name, which carries "Flip side of".
 - The corner is the second and last use of the fold motif. It is not to be reused for other actions.
 - Print omits the corner.
+
+---
+
+## D21. Text and Call are mobile only; desktop email is a remembered choice
+
+**Status:** Accepted, 2026-09-27
+
+**Decision.** On a phone, the Email, Text, and Call channels stay as plain `mailto:`, `sms:`, and `tel:` links. On a desktop, Text and Call are not offered, because a desktop has no reliable handler for them. Email on a desktop opens, on first use, a small choice of how to compose: the default mail app, Gmail, Outlook.com, Microsoft 365, or copy the address and message. The choice is remembered in the browser and shown as "via Gmail" next to the link, where it can be changed. Device detection is client-side and a wrong guess only changes which links appear.
+
+**Why.** `sms:` and `tel:` do nothing on most desktops, and `mailto:` opens whatever the OS thinks the mail client is, which for web mail users is often wrong or unset. Web mail compose URLs fix email for most people. Nothing fixes SMS from a desktop without a paid gateway, which D1 already declined.
+
+**Rejected.**
+- *Copy only.* Works but is a chore. Kept as one of the choices.
+- *QR handoff to the phone.* Clever, still an extra step; may come back.
+- *Instance sends the message on the fulfiller's behalf.* The bot channel from D16. Reliable everywhere and stays within the one-opening-message rule, but adds a message form to the page. Deferred, not rejected.

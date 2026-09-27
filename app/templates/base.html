@@ -7,6 +7,14 @@
 <link rel="icon" href="{{ STATIC_URL|default:'/static/' }}mark.svg" type="image/svg+xml">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;500;600&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="/static/greensheet.css">
+<script>
+(function(){
+  var ua=navigator.userAgent||"", d=navigator.userAgentData;
+  var m=(d&&typeof d.mobile==="boolean")?d.mobile:/Android|iPhone|iPad|iPod|Mobile/i.test(ua);
+  if(!m&&window.matchMedia){ m=matchMedia("(pointer:coarse)").matches&&!matchMedia("(pointer:fine)").matches; }
+  document.documentElement.classList.add(m?"mobile":"desktop");
+})();
+</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/htmx/2.0.4/htmx.min.js" defer></script>
 </head>
 <body hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
@@ -25,5 +33,6 @@
 <main class="{% block mainclass %}page{% endblock %}">
 {% block content %}{% endblock %}
 </main>
+<script src="/static/channels.js" defer></script>
 </body>
 </html>

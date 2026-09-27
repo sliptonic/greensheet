@@ -146,6 +146,7 @@ The same principles apply to programs.
 - Responses are predictable and small. No envelope cleverness.
 - A bridge that posts into Telegram or Discord uses the same subject grammar as email.
 - A channel's prefilled message names the greensheet and the item number, so a conversation started from paper and one started from screen read the same.
+- Channels fit the device. Text and Call appear only on phones. Desktop email offers a remembered choice of mail app or web mail, shown quietly as "via Gmail" beside the link (D21).
 
 ## Anti-patterns
 

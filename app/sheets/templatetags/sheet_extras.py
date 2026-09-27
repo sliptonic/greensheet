@@ -14,7 +14,12 @@ register = template.Library()
 def channels_for(sheet, item):
     subject = f"Greensheet: {sheet.name}, item {item.number}"
     body = f"About item {item.number}, {item.title}\n{sheet.absolute_url}\n\n"
-    out = {"email": f"mailto:{sheet.contact_email}?subject={quote(subject)}&body={quote(body)}"}
+    out = {
+        "email": f"mailto:{sheet.contact_email}?subject={quote(subject)}&body={quote(body)}",
+        "to": sheet.contact_email,
+        "subject": subject,
+        "body": body,
+    }
     if sheet.contact_phone:
         digits = "".join(ch for ch in sheet.contact_phone if ch.isdigit() or ch == "+")
         out["sms"] = f"sms:{digits}?&body={quote(subject + '. ')}"

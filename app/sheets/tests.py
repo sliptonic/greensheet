@@ -147,6 +147,16 @@ class GreensheetTests(Base):
         self.assertContains(r, "Marcus Bell completed item 1")
 
 
+class ChannelTests(Base):
+    def test_fulfiller_links_carry_compose_data_and_mobile_only_marks(self):
+        r = signin(self.marcus).get(f"/s/{self.sheet.code}")
+        self.assertContains(r, 'class="ch-email" href="mailto:dana@example.com')
+        self.assertContains(r, 'data-subject="Greensheet: 2025 tax engagement, item 1"')
+        self.assertContains(r, 'class="mobile-only" href="sms:5735550142')
+        self.assertContains(r, 'class="mobile-only" href="tel:5735550142')
+        self.assertContains(r, "channels.js")
+
+
 class RequesterViewTests(Base):
     def test_requester_sees_no_channel_links(self):
         r = signin(self.dana).get(f"/s/{self.sheet.code}")

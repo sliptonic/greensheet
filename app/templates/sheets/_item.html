@@ -21,13 +21,15 @@
       {% else %}
         {% if item.due_date %}<span class="due">due {{ item.due_date|date:"D, M j" }}</span>{% endif %}
         {% if role == "fulfiller" %}
+        {% with ch=sheet|channel:item %}
         <span class="ch no-print">
-          <a href="{{ sheet|channel:item|get:'email' }}">Email</a>
+          <a class="ch-email" href="{{ ch.email }}" data-to="{{ ch.to }}" data-subject="{{ ch.subject }}" data-body="{{ ch.body }}">Email</a>
           {% if sheet.contact_phone %}
-          <a href="{{ sheet|channel:item|get:'sms' }}">Text</a>
-          <a href="{{ sheet|channel:item|get:'tel' }}">Call</a>
+          <a class="mobile-only" href="{{ ch.sms }}">Text</a>
+          <a class="mobile-only" href="{{ ch.tel }}">Call</a>
           {% endif %}
         </span>
+        {% endwith %}
         {% endif %}
       {% endif %}
       {% if role == "requester" and not sheet.archived %}
