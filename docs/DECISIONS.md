@@ -347,3 +347,23 @@ Full specification of the hard copy is in `docs/DESIGN.md` under Surfaces.
 - *Copy only.* Works but is a chore. Kept as one of the choices.
 - *QR handoff to the phone.* Clever, still an extra step; may come back.
 - *Instance sends the message on the fulfiller's behalf.* The bot channel from D16. Reliable everywhere and stays within the one-opening-message rule, but adds a message form to the page. Deferred, not rejected.
+
+---
+
+## D22. The invite links to the greensheet, not to a sign-in link
+
+**Status:** Accepted, 2026-09-28
+
+**Decision.** The invite email carries the greensheet's stable address, `<site>/s/<code>`. Opening that address signed out shows a form asking for the email address the greensheet was sent to; submitting it sends a magic link that returns to the same greensheet. Magic links are sent only when someone asks for one, from that form or from the plain sign-in page. An expired or used link points back to the page it was going to.
+
+**Why.** The invite used to embed a magic link, which expires in fifteen minutes and works once. Fulfillers do not open invites within fifteen minutes, and an expired invite is a dead end that makes the product look broken. With the greensheet's address in the invite, the email is a permanent way back: keep it, open it from any device, sign in if asked. This is the same address that the hard copy's QR code and the digest already carry, so every route to a greensheet is now the one route.
+
+**Rejected.**
+- *Longer-lived invite links.* A link that signs you in for weeks is a credential sitting in an inbox, and it still dies eventually.
+- *Sending the sign-in link without asking for the email.* The page would have to guess who is visiting from a guessable code, and anyone with the address could flood a party's inbox and use up their rate limit.
+- *Both addresses in the invite.* Two links to explain, and the first one still expires.
+
+**Consequences.**
+- The invite no longer counts against the fulfiller's magic-link rate limit.
+- Invite acceptance is recorded on the fulfiller's first sign-in, as before.
+- The sign-in form on a greensheet reveals nothing about the greensheet; it looks the same for any code.

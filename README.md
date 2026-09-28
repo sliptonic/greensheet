@@ -14,7 +14,7 @@ Greensheet is that experience in a browser. A greensheet should be recognizable 
 
 1. Sign in with your email address. There are no passwords and nothing to register. A link arrives in your inbox and signs you in on that device.
 2. Create a greensheet and add items. Each item has a title, an optional note, an optional due date, and channels: ways to reach you about that item, such as email, SMS, or a messaging app.
-3. Invite the fulfiller by email. They get a link that signs them in and opens the greensheet.
+3. Invite the fulfiller by email. They get the greensheet's address, which never changes. The first time they open it, they enter their email and a sign-in link arrives. The invite email works again whenever they need to find their way back.
 4. The fulfiller works through the list. For each item they can mark it complete, or start a conversation with you through one of the channels you provided.
 5. Add items any time. They appear to the fulfiller immediately, and in the next daily digest if they've opted in.
 

@@ -84,7 +84,7 @@ The role held by the person expected to perform the actions on a greensheet. Eac
 
 ### Invite
 
-The act by which a requester associates a person, by email address, with a greensheet as its fulfiller. An invite sends the fulfiller one email containing a magic link to the greensheet. No further invite email is sent for that greensheet and address until the invite is accepted. Every invite email carries a **decline** link. Requesters have a daily invite cap.
+The act by which a requester associates a person, by email address, with a greensheet as its fulfiller. An invite sends the fulfiller one email containing the greensheet's address. Opening that address signed out asks for an email and sends a magic link that returns to the greensheet. No further invite email is sent for that greensheet and address until the invite is accepted. Every invite email carries a **decline** link. Requesters have a daily invite cap.
 
 ### Decline
 

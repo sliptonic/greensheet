@@ -53,7 +53,7 @@
       <form method="post" action="{% url 'archive' sheet.code %}" class="inline">{% csrf_token %}<button class="linkish" type="submit">Archive</button></form>
     {% endif %}
   {% endif %}
-  <span class="r">{{ sheet.short_url }}</span>
+  <a class="r" href="{{ sheet.absolute_url }}" target="_blank" rel="noopener" title="Permanent address of this greensheet, opens in a new tab">{{ sheet.short_url }}</a>
 </div>
 
 {% if not preview and paired or not preview and can_create_flip %}

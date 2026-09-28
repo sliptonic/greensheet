@@ -52,7 +52,6 @@ class SignInTests(Base):
         self.assertEqual(mail.outbox[-1].subject, "Greensheet: sign in")
 
     def test_rate_limit(self):
-        # The invite already issued one link for Marcus.
         from .models import MagicLink
 
         with self.assertRaises(services.Refused):
@@ -74,7 +73,7 @@ class SignInTests(Base):
         self.assertEqual(m.get(f"/s/{self.sheet.code}").status_code, 200)
         d = signin(self.dana)
         d.post(f"/s/{self.sheet.code}/revoke")
-        self.assertEqual(m.get(f"/s/{self.sheet.code}").status_code, 302)  # sent to sign in
+        self.assertContains(m.get(f"/s/{self.sheet.code}"), "Sign in to open this greensheet")
         self.assertTrue(Event.objects.filter(kind="session.revoked").exists())
         # and can sign back in
         m2 = signin(self.marcus)
@@ -182,20 +181,46 @@ class RequesterViewTests(Base):
 
     def test_home_wording_and_hidden_form(self):
         r = signin(self.dana).get("/")
-        self.assertContains(r, "Created by you")
+        self.assertContains(r, ">For you<")
+        self.assertContains(r, ">From you<")
         self.assertNotContains(r, "Set by you")
+        self.assertContains(r, "2 open")  # two items on the sheet Dana set for Marcus
         self.assertContains(r, 'id="create-form" hidden')
+        self.assertContains(signin(self.marcus).get("/"), "2 to do")
 
 
 class InviteTests(Base):
     def test_invite_email_grammar_and_decline_blocks(self):
         sheet = services.create_greensheet(self.dana, name="Kitchen", fulfiller_email="pat@example.com")
         self.assertEqual(mail.outbox[-1].subject, "Greensheet: Kitchen from Dana Whitfield")
+        self.assertIn(sheet.absolute_url, mail.outbox[-1].body)
+        self.assertNotIn("/auth/", mail.outbox[-1].body, "the invite is the greensheet's address, not a magic link")
         r = Client().get(f"/invite/{sheet.invite.token}/decline")
         self.assertEqual(r.status_code, 200)
         self.assertTrue(Block.objects.filter(requester=self.dana, person__email="pat@example.com").exists())
         with self.assertRaises(services.Refused):
             services.create_greensheet(self.dana, name="Again", fulfiller_email="pat@example.com")
+
+    def test_sheet_link_asks_signed_out_visitor_to_sign_in_then_returns(self):
+        from .models import MagicLink
+
+        c = Client()
+        url = self.sheet.get_absolute_url()
+        r = c.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "Sign in to open this greensheet")
+        self.assertContains(r, f'action="/signin?next={url}"')
+        r = c.post(f"/signin?next={url}", {"email": self.marcus.email})
+        self.assertEqual(r.status_code, 200)
+        link = MagicLink.objects.filter(person=self.marcus).latest("created_at")
+        self.assertEqual(link.next, url)
+        self.assertRedirects(c.get(f"/auth/{link.token}"), url, fetch_redirect_response=False)
+        self.assertContains(c.get(url), self.sheet.name)
+        self.assertTrue(Greensheet.objects.get(pk=self.sheet.pk).invite.accepted_at)
+        # Signed in, the same address opens the greensheet; sign-in with next just goes there.
+        self.assertRedirects(c.get(f"/signin?next={url}"), url, fetch_redirect_response=False)
+        # A stale link points back at the greensheet, not the generic sign-in page.
+        self.assertContains(Client().get(f"/auth/{link.token}"), f'href="{url}"', status_code=410)
 
     def test_cannot_set_greensheet_for_self(self):
         with self.assertRaises(services.Refused):

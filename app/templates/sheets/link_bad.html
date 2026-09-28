@@ -3,6 +3,6 @@
 {% block content %}
 <section class="narrow">
   <h1>That link has been used or has expired</h1>
-  <p>Sign-in links work once and last 15 minutes. <a href="{% url 'signin' %}">Ask for a new one.</a></p>
+  <p>Sign-in links work once and last 15 minutes. <a href="{% if next and next != '/' %}{{ next }}{% else %}{% url 'signin' %}{% endif %}">Ask for a new one.</a></p>
 </section>
 {% endblock %}

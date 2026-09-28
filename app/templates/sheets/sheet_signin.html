@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Sign in · Greensheet{% endblock %}
+{% block content %}
+<section class="narrow">
+  <h1>Sign in to open this greensheet</h1>
+  <p>Enter the email address this greensheet was sent to. A link that opens it on this device will arrive in your inbox. There is no password.</p>
+  <form method="post" action="{% url 'signin' %}?next={{ next|urlencode }}" class="stack">{% csrf_token %}
+    <label>Email <input type="email" name="email" required autofocus autocomplete="email"></label>
+    <button type="submit">Send me a link</button>
+  </form>
+</section>
+{% endblock %}

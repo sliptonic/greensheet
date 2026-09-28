@@ -147,8 +147,12 @@ def create_greensheet(requester, *, name, fulfiller_email, fulfiller_name="", co
 
 
 def send_invite(invite):
+    """The invite links to the greensheet itself, an address that never changes.
+
+    No magic link: the fulfiller signs in from the greensheet page when they
+    get there, however long that takes, and the same email works again later.
+    """
     sheet = invite.greensheet
-    link = issue_magic_link(sheet.fulfiller, sheet.get_absolute_url(), send=False)
     decline = settings.SITE_URL + reverse("decline", args=[invite.token])
     lines = [
         f"{sheet.name}",
@@ -157,9 +161,10 @@ def send_invite(invite):
         f"{sheet.requester.display} has set out some things they need from you.",
         "Open the greensheet, and mark each item when it is done.",
         "",
-        f"{link.absolute_url}",
+        f"{sheet.absolute_url}",
         "",
-        "That link signs you in on this device. There is no password.",
+        "The first time, enter your email address and a sign-in link will arrive.",
+        "There is no password. Keep this email: the address above always works.",
         "",
         f"If you don't want greensheets from {sheet.requester.display}, decline here:",
         f"{decline}",
@@ -167,7 +172,7 @@ def send_invite(invite):
     ]
     _send(sheet.fulfiller.email, subject_for(sheet, f" from {sheet.requester.display}"), "\n".join(lines))
     record("invite.sent", greensheet=sheet, actor=sheet.requester, to=sheet.fulfiller.email)
-    return link
+    return invite
 
 
 @transaction.atomic

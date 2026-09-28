@@ -92,6 +92,7 @@ The subject line must be findable in an inbox of hundreds and must sort predicta
   - Digest: `Greensheet: <name>, <n> new` or `, <n> completed` or `, <n> overdue`, in that order, listing only nonzero counts
 - All mail about one greensheet threads together. Use consistent threading headers so inbox clients group them.
 - Body: plain text. First line says who the greensheet is from. Second line says what to do. Then the items. Then the link. Nothing else.
+- The invite carries the greensheet's own address, never a sign-in link. A sign-in link expires; the invite must not.
 - No footers beyond the opt-out line the digest requires. No logos in the body. No tracking.
 
 ### Page

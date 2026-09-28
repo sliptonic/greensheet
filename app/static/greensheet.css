@@ -94,7 +94,8 @@ main.gs{max-width:760px;margin:0 auto;padding:44px 32px 64px;font-family:var(--s
 .gs .foot{display:flex;flex-wrap:wrap;gap:8px 22px;margin-top:28px;padding-left:28px;font-family:var(--sans);font-size:13px;color:var(--ink-soft)}
 .gs .foot a{text-decoration:none;color:var(--ink-soft);border-bottom:1px solid var(--rule)}
 .gs .foot a:hover{color:var(--ink);border-bottom-color:var(--ink)}
-.gs .foot .r{margin-left:auto;color:var(--ink-faint);font-family:var(--mono);font-size:12px}
+.gs .foot .r{margin-left:auto;color:var(--ink-faint);font-family:var(--mono);font-size:12px;text-decoration:none}
+.gs .foot a.r:hover{text-decoration:underline}
 .history{list-style:none;margin:24px 0 0;padding:0;font-family:var(--sans);font-size:14px}
 .history li{display:grid;grid-template-columns:170px 1fr;gap:16px;padding:8px 0;border-top:1px solid var(--rule)}
 .history .when{font-family:var(--mono);font-size:12px;color:var(--ink-faint);font-variant-numeric:tabular-nums;padding-top:2px}
@@ -165,10 +166,36 @@ main:not(.flip-in):not(.flip-out){transition:transform .28s ease-out}
   main{transform:none !important;transition:none !important}
 }
 
-/* ---------- home: create ---------- */
-.create-row{margin:12px 0 0}
+/* ---------- home: the desk ----------
+   Not a sheet. Sans throughout, wider, two piles side by side on a darker
+   ground so the paper-white piles read as things lying on a desk. */
+main.desk{max-width:1040px;margin:0 auto;padding:36px 24px 64px;font-family:var(--sans)}
+.desk-head{margin:0 0 22px}
+.desk-head h1{margin:0 0 4px;font-size:22px}
+.desk-head p{margin:0;font-size:14px}
+.stacks{display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start}
+@media (max-width:760px){.stacks{grid-template-columns:1fr;gap:20px}}
+.pile{background:#fff;border:1px solid var(--rule);border-top:4px solid var(--sheet);padding:0 0 18px;box-shadow:0 1px 0 var(--rule),0 10px 24px -20px rgba(28,33,28,.5)}
+.pile header{padding:16px 20px 12px;border-bottom:1px solid var(--rule)}
+.pile header h2{margin:0;font-size:18px;font-weight:600;color:var(--ink);text-transform:none;letter-spacing:-.01em}
+.pile header p{margin:2px 0 0;font-size:13px;color:var(--ink-soft)}
+.pile-list{list-style:none;margin:0;padding:0}
+.pile-list li{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 20px;border-bottom:1px solid var(--rule)}
+.pile-list li:last-child{border-bottom:0}
+.pile-list a{display:grid;grid-template-columns:auto 1fr;column-gap:0;align-items:center;text-decoration:none;min-width:0}
+.pile-list .name{font-family:var(--serif);font-size:17px;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pile-list .who{grid-column:2;font-size:13px;color:var(--ink-soft);margin-top:1px}
+.pile-list a:hover .name{text-decoration:underline;text-decoration-color:var(--rule);text-underline-offset:3px}
+.pile-list .count{flex:none;font-family:var(--mono);font-size:12px;color:var(--ink-soft);font-variant-numeric:tabular-nums}
+.pile-list li.archived .name,.pile-list li.archived .who{color:var(--ink-faint)}
+.pile-list li.archived .count{color:var(--ink-faint)}
+.pile-list li.archived .mark{background:var(--ink-faint)}
+.pile .empty{margin:0;padding:18px 20px;font-size:14px;color:var(--ink-soft)}
+.pile .create-row{margin:16px 20px 0}
+.pile .stack{margin:14px 20px 0}
+.pile .stack h3{margin:0;font-size:15px;font-weight:600}
 button.primary{background:var(--ink);color:var(--paper);border:0;padding:9px 16px;cursor:pointer}
-#create-form h2{margin-top:6px}
+.desk-foot{margin:28px 0 0}
 
 /* ---------- add item: title, note, then date and Add ---------- */
 .add{display:grid;grid-template-columns:1fr;gap:10px;margin:22px 0 0 28px;font-family:var(--sans)}

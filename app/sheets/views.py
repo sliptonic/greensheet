@@ -6,13 +6,15 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
+from django.db.models import Count, Q
 from django.http import Http404, HttpResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods, require_POST
 
 from . import services
-from .models import ApiToken, Greensheet, Person, Webhook
+from .models import ApiToken, Greensheet, MagicLink, Person, Webhook
 from .services import Refused
 
 # ---------------------------------------------------------------- helpers
@@ -48,6 +50,12 @@ def requester_only(view):
         return view(request, sheet, role, *args, **kwargs)
 
     return wrapped
+
+
+def _safe_next(path):
+    """A local path to return to after sign-in, else the home page."""
+    path = path or ""
+    return path if path.startswith("/") and not path.startswith("//") else "/"
 
 
 def _is_htmx(request):
@@ -97,22 +105,23 @@ def _sheet_context(request, sheet, role, preview=False):
 
 @require_http_methods(["GET", "POST"])
 def signin(request):
+    nxt = _safe_next(request.GET.get("next"))
     if request.user.is_authenticated:
-        return redirect("home")
+        return redirect(nxt)
     if request.method == "POST":
         email = request.POST.get("email", "").strip().lower()
         if "@" not in email:
             messages.error(request, "Enter your email address.")
-            return redirect("signin")
+            return redirect(request.get_full_path())
         if not services.cold_signin_allowed(email):
             messages.error(request, "This instance is by invitation. Ask someone here to set a greensheet for you.")
-            return redirect("signin")
+            return redirect(request.get_full_path())
         person, _ = Person.objects.get_or_create_by_email(email)
         try:
-            link = services.issue_magic_link(person, request.GET.get("next") or "/")
+            link = services.issue_magic_link(person, nxt)
         except Refused as e:
             messages.error(request, str(e))
-            return redirect("signin")
+            return redirect(request.get_full_path())
         return render(
             request,
             "sheets/check_email.html",
@@ -124,11 +133,13 @@ def signin(request):
 def consume(request, token):
     link = services.consume_magic_link(token)
     if link is None:
-        return render(request, "sheets/link_bad.html", status=410)
+        # Send them back where the dead link was going, so a stale link to a
+        # greensheet lands on that greensheet's sign-in form.
+        stale = MagicLink.objects.filter(token=token).values_list("next", flat=True).first()
+        return render(request, "sheets/link_bad.html", {"next": _safe_next(stale)}, status=410)
     login(request, link.person, backend="django.contrib.auth.backends.ModelBackend")
     request.session["epoch"] = link.person.session_epoch
-    nxt = link.next if link.next.startswith("/") else "/"
-    return redirect(nxt)
+    return redirect(_safe_next(link.next))
 
 
 @require_POST
@@ -150,12 +161,16 @@ def decline(request, token):
 @login_required
 def home(request):
     me = request.user
+    sheets = Greensheet.objects.select_related("requester", "fulfiller").annotate(
+        open_items=Count("items", filter=Q(items__completed_at__isnull=True)),
+        done_items=Count("items", filter=Q(items__completed_at__isnull=False)),
+    )
     return render(
         request,
         "sheets/home.html",
         {
-            "for_me": Greensheet.objects.filter(fulfiller=me).select_related("requester"),
-            "set_by_me": Greensheet.objects.filter(requester=me).select_related("fulfiller"),
+            "for_me": sheets.filter(fulfiller=me),
+            "set_by_me": sheets.filter(requester=me),
         },
     )
 
@@ -228,8 +243,15 @@ def delete_me(request):
 # ---------------------------------------------------------------- greensheet
 
 
-@party
-def sheet(request, sheet, role):
+def sheet(request, code):
+    """A greensheet's address is stable and is what the invite email carries.
+
+    Signed out, the page asks for an email address and sends a sign-in link
+    that returns here. The greensheet itself is not shown until then.
+    """
+    if not request.user.is_authenticated:
+        return render(request, "sheets/sheet_signin.html", {"next": reverse("sheet", args=[code])})
+    sheet, role = _sheet_for(request, code)
     if request.GET.get("completed") in ("show", "hide"):
         request.session[f"show_completed:{sheet.code}"] = request.GET["completed"] == "show"
         return redirect(sheet)
