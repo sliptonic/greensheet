@@ -105,29 +105,34 @@ def _sheet_context(request, sheet, role, preview=False):
 
 @require_http_methods(["GET", "POST"])
 def signin(request):
-    nxt = _safe_next(request.GET.get("next"))
+    """The destination travels in a hidden field on POST, not the query string.
+
+    Proxies with a web application firewall tend to reject a POST whose
+    query string carries a path, which is exactly what ?next=/s/<code> is.
+    """
+    nxt = _safe_next(request.POST.get("next") or request.GET.get("next"))
     if request.user.is_authenticated:
         return redirect(nxt)
     if request.method == "POST":
         email = request.POST.get("email", "").strip().lower()
         if "@" not in email:
             messages.error(request, "Enter your email address.")
-            return redirect(request.get_full_path())
+            return render(request, "sheets/signin.html", {"next": nxt})
         if not services.cold_signin_allowed(email):
             messages.error(request, "This instance is by invitation. Ask someone here to set a greensheet for you.")
-            return redirect(request.get_full_path())
+            return render(request, "sheets/signin.html", {"next": nxt})
         person, _ = Person.objects.get_or_create_by_email(email)
         try:
             link = services.issue_magic_link(person, nxt)
         except Refused as e:
             messages.error(request, str(e))
-            return redirect(request.get_full_path())
+            return render(request, "sheets/signin.html", {"next": nxt})
         return render(
             request,
             "sheets/check_email.html",
             {"email": email, "link": link if settings.SHOW_MAGIC_LINKS else None},
         )
-    return render(request, "sheets/signin.html")
+    return render(request, "sheets/signin.html", {"next": nxt})
 
 
 def consume(request, token):

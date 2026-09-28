@@ -65,7 +65,7 @@ class SignInTests(Base):
         self.assertTrue(services.cold_signin_allowed("anyone@example.org"))
         self.assertTrue(services.cold_signin_allowed("vip@example.com"))
         self.assertTrue(services.cold_signin_allowed("marcus@example.com"))  # invited
-        r = Client().post("/signin", {"email": "nobody@example.com"}, follow=True)
+        r = Client().post("/signin", {"email": "nobody@example.com"})
         self.assertContains(r, "by invitation")
 
     def test_revoke_signs_out_everywhere(self):
@@ -209,8 +209,11 @@ class InviteTests(Base):
         r = c.get(url)
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "Sign in to open this greensheet")
-        self.assertContains(r, f'action="/signin?next={url}"')
-        r = c.post(f"/signin?next={url}", {"email": self.marcus.email})
+        # The destination rides in a hidden field, never the query string:
+        # a POST to /signin?next=/s/... is blocked by common proxy firewalls.
+        self.assertContains(r, 'action="/signin"')
+        self.assertContains(r, f'name="next" value="{url}"')
+        r = c.post("/signin", {"email": self.marcus.email, "next": url})
         self.assertEqual(r.status_code, 200)
         link = MagicLink.objects.filter(person=self.marcus).latest("created_at")
         self.assertEqual(link.next, url)

@@ -4,7 +4,8 @@
 <section class="narrow">
   <h1>Sign in</h1>
   <p>Enter your email. A link that signs you in on this device will arrive in your inbox. There is no password.</p>
-  <form method="post" class="stack">{% csrf_token %}
+  <form method="post" action="{% url 'signin' %}" class="stack">{% csrf_token %}
+    <input type="hidden" name="next" value="{{ next|default:'/' }}">
     <label>Email <input type="email" name="email" required autofocus autocomplete="email"></label>
     <button type="submit">Send me a link</button>
   </form>
