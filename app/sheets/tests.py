@@ -3,11 +3,12 @@ Run with: python manage.py test
 """
 
 import json
-from datetime import date
+from datetime import date, timedelta
 from unittest import mock
 
 from django.core import mail
 from django.test import Client, TestCase, override_settings
+from django.utils import timezone
 
 from . import services
 from .models import Block, DigestSubscription, Event, Greensheet, Item, Person, Webhook
@@ -132,13 +133,34 @@ class GreensheetTests(Base):
         self.sheet.refresh_from_db()
         self.assertFalse(self.sheet.archived)
 
-    def test_hide_completed(self):
+    def test_completed_hidden_by_default(self):
         services.complete_item(self.i2, self.marcus)
         m = signin(self.marcus)
-        m.get(f"/s/{self.sheet.code}?completed=hide")
         self.assertNotContains(m.get(f"/s/{self.sheet.code}"), "Provide tax returns")
         m.get(f"/s/{self.sheet.code}?completed=show")
         self.assertContains(m.get(f"/s/{self.sheet.code}"), "Provide tax returns")
+        m.get(f"/s/{self.sheet.code}?completed=hide")
+        self.assertNotContains(m.get(f"/s/{self.sheet.code}"), "Provide tax returns")
+
+    def test_completing_over_htmx_marks_the_row_as_leaving_and_updates_counts(self):
+        m = signin(self.marcus)
+        r = m.post(f"/s/{self.sheet.code}/items/1/complete", HTTP_HX_REQUEST="true")
+        self.assertContains(r, 'class="item done leaving"')
+        self.assertContains(r, "2 items · 1 complete")
+        self.assertContains(r, "Show completed")
+        m.get(f"/s/{self.sheet.code}?completed=show")
+        r = m.post(f"/s/{self.sheet.code}/items/2/complete", HTTP_HX_REQUEST="true")
+        self.assertContains(r, 'class="item done"')
+
+    def test_page_shows_the_address_the_browser_used_unless_site_url_is_set(self):
+        m = signin(self.marcus)
+        r = m.get(f"/s/{self.sheet.code}", HTTP_HOST="127.0.0.1:8765")
+        with override_settings(SITE_URL_EXPLICIT=False):
+            r = m.get(f"/s/{self.sheet.code}", HTTP_HOST="127.0.0.1:8765")
+            self.assertContains(r, f"127.0.0.1:8765/s/{self.sheet.code}")
+        with override_settings(SITE_URL_EXPLICIT=True, SITE_URL="https://example.org"):
+            r = m.get(f"/s/{self.sheet.code}", HTTP_HOST="127.0.0.1:8765")
+            self.assertContains(r, f"example.org/s/{self.sheet.code}")
 
     def test_history_page(self):
         services.complete_item(self.i1, self.marcus)
@@ -408,3 +430,80 @@ class DeletionTests(Base):
         d.post("/me/delete", {"confirm": self.dana.email})
         self.assertFalse(Greensheet.objects.filter(pk=self.sheet.pk).exists())
         self.assertTrue(Event.objects.filter(kind="sheet.deleted", data__sheet_name="2025 tax engagement").exists())
+
+
+class QualityOfLifeTests(Base):
+    def test_icon_on_tab_and_rows_and_flip_side(self):
+        d = signin(self.dana)
+        d.post(f"/s/{self.sheet.code}/edit", {"name": self.sheet.name, "contact_email": self.dana.email, "contact_phone": "", "icon": " § "})
+        self.sheet.refresh_from_db()
+        self.assertEqual(self.sheet.icon, "§")
+        r = d.get(f"/s/{self.sheet.code}")
+        self.assertContains(r, 'rel="icon" href="data:image/svg+xml')
+        self.assertContains(r, 'class="mark  has-glyph"')
+        self.assertContains(d.get("/"), 'class="mark sm has-glyph"')
+        self.assertEqual(Event.objects.filter(kind="sheet.edited").latest("at").data["changed"]["icon"], ["", "§"])
+        m = signin(self.marcus)
+        m.post(f"/s/{self.sheet.code}/flip")
+        self.assertEqual(Greensheet.objects.get(flip_of=self.sheet).icon, "§")
+        # plain mark without one
+        self.assertContains(Client().get("/signin"), 'href="/static/mark.svg"')
+
+    def test_icon_from_create_form_is_cleaned(self):
+        d = signin(self.dana)
+        d.post("/new", {"name": "Kitchen", "fulfiller_email": "pat@example.com", "icon": "🍳 extra long paste here"})
+        self.assertEqual(Greensheet.objects.get(name="Kitchen").icon, "🍳 extra long pas")  # 16 code points
+
+    def test_edit_item_in_place(self):
+        d = signin(self.dana)
+        r = d.get(f"/s/{self.sheet.code}/items/1/edit", HTTP_HX_REQUEST="true")
+        self.assertContains(r, 'class="item editing"')
+        self.assertContains(r, 'value="Sign the engagement letter"')
+        r = d.post(f"/s/{self.sheet.code}/items/1/edit", {"title": "Sign it", "note": "", "due_date": ""}, HTTP_HX_REQUEST="true")
+        self.assertContains(r, 'id="item-1"')
+        self.assertContains(r, "Sign it")
+        self.assertNotContains(r, 'class="item editing"')
+        r = d.get(f"/s/{self.sheet.code}/items/1", HTTP_HX_REQUEST="true")
+        self.assertContains(r, 'id="item-1"')
+        # the same URLs are ordinary pages without htmx
+        self.assertContains(d.get(f"/s/{self.sheet.code}/items/1/edit"), "<h1>Item 1</h1>")
+        self.assertRedirects(d.get(f"/s/{self.sheet.code}/items/1"), self.sheet.get_absolute_url(), fetch_redirect_response=False)
+
+    def test_new_tag_for_items_added_since_the_fulfillers_last_visit(self):
+        from .models import Visit
+
+        m = signin(self.marcus)
+        self.assertNotContains(m.get(f"/s/{self.sheet.code}"), ">new<")  # first visit: nothing is new
+        services.add_item(self.sheet, self.dana, title="Bring the receipts")
+        r = m.get(f"/s/{self.sheet.code}")
+        self.assertContains(r, ">new<", count=1)
+        self.assertContains(r, "Bring the receipts")
+        # a refresh within the visit keeps the tag
+        self.assertContains(m.get(f"/s/{self.sheet.code}"), ">new<", count=1)
+        # a later visit starts a fresh baseline: the old items predate it, the new one does not
+        Item.objects.filter(greensheet=self.sheet).exclude(title="Bring the receipts").update(created_at=timezone.now() - timedelta(minutes=20))
+        Visit.objects.filter(person=self.marcus).update(seen_at=timezone.now() - timedelta(minutes=11))
+        self.assertContains(m.get(f"/s/{self.sheet.code}"), ">new<", count=1)  # still new: added after that baseline
+        self.assertNotContains(m.get(f"/s/{self.sheet.code}"), ">new<")  # seen now
+        # the requester never sees it
+        services.add_item(self.sheet, self.dana, title="One more")
+        self.assertNotContains(signin(self.dana).get(f"/s/{self.sheet.code}"), ">new<")
+
+    def test_undo_line_after_a_row_leaves(self):
+        m = signin(self.marcus)
+        r = m.post(f"/s/{self.sheet.code}/items/1/complete", HTTP_HX_REQUEST="true")
+        self.assertContains(r, 'id="undo" hx-swap-oob="true">Item 1 done.')
+        self.assertContains(r, f'action="/s/{self.sheet.code}/items/1/reopen"')
+        r = m.post(f"/s/{self.sheet.code}/items/1/reopen")
+        self.assertRedirects(r, self.sheet.get_absolute_url(), fetch_redirect_response=False)
+        self.assertContains(m.get(f"/s/{self.sheet.code}"), "Sign the engagement letter")
+
+    def test_home_screen_manifest_and_icons(self):
+        r = Client().get("/signin")
+        self.assertContains(r, 'rel="manifest" href="/static/manifest.webmanifest"')
+        self.assertContains(r, 'rel="apple-touch-icon" href="/static/icon-180.png"')
+        from django.conf import settings
+
+        for name in ("manifest.webmanifest", "icon-180.png", "icon-192.png", "icon-512.png", "icon-512-maskable.png"):
+            self.assertTrue((settings.BASE_DIR / "static" / name).exists(), name)
+

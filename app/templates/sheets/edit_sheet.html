@@ -5,6 +5,7 @@
   <h1>Edit greensheet details</h1>
   <form method="post" class="stack">{% csrf_token %}
     <label>Name <input name="name" value="{{ sheet.name }}" required></label>
+    {% include "sheets/_icon_field.html" with value=sheet.icon %}
     <label>Your contact email for this greensheet <input type="email" name="contact_email" value="{{ sheet.contact_email }}" required></label>
     <label>Your phone for this greensheet <span class="soft">optional</span> <input name="contact_phone" value="{{ sheet.contact_phone }}"></label>
     <div class="row"><button type="submit">Save</button> <a href="{{ sheet.get_absolute_url }}">Cancel</a></div>

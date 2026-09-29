@@ -39,6 +39,10 @@ SECRET_KEY = _secret_key()
 
 # Public URL of this instance. Used in emails, QR codes, and hard copies.
 SITE_URL = os.environ.get("GREENSHEET_SITE_URL", "http://localhost:8000").rstrip("/")
+# When unset, pages use the address the browser actually reached, so a dev
+# server on any port shows the right link. Emails have no request and keep
+# SITE_URL.
+SITE_URL_EXPLICIT = bool(os.environ.get("GREENSHEET_SITE_URL"))
 CSRF_TRUSTED_ORIGINS = [SITE_URL]
 
 INSTALLED_APPS = [

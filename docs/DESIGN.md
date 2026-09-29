@@ -77,7 +77,7 @@ The word "sheet" invites printing. That is not a metaphor to survive; it is a fe
 
 The tab must be findable in a row of thirty.
 
-- Favicon: the green mark. Always. Never a status variant.
+- Favicon: the green mark. Never a status variant. The requester may put one character or emoji on it so this greensheet's tab stands out from the others; the green stays (D23).
 - Title grammar: `<greensheet name> · Greensheet`. The name first so it is readable when the tab is narrow; the product last so it is findable by scanning for the suffix.
 - No unread counts or dynamic prefixes in the title.
 
@@ -99,7 +99,7 @@ The subject line must be findable in an inbox of hundreds and must sort predicta
 
 - The mark, the name, who it is from, the items. In that order, nothing between.
 - Items are the only interactive elements the fulfiller sees, plus channel links within them.
-- Completed items are visually quieter, not hidden, unless the requester hides them.
+- Completed items leave the list: a beat to see the check land, then the row folds away. They are hidden by default and one click away under "Show completed", where they are visually quieter.
 - The requester's editing controls appear inline on hover or focus, not in a toolbar.
 - Works at any width. Works without JavaScript for reading and for completing an item.
 
@@ -113,7 +113,7 @@ Contents, top to bottom:
 - The greensheet name.
 - Who it is from: the requester's name and contact details as plain text. Email address and phone number spelled out, since links do not work on paper.
 - "As of" date and time, so a stale copy announces itself.
-- The items. Each with its item number, an empty box, the title, the note in full, and the due date if any. Completed items print with a filled box and remain listed, unless the reader has hidden them on screen. URLs in notes print as text.
+- The items. Each with its item number, an empty box, the title, the note in full, and the due date if any. Completed items print with a filled box when they are shown on screen; by default they are hidden and the hard copy lists only what is still to do. URLs in notes print as text.
 - A QR code and the short URL of the live greensheet, with one line: "Scan to open. Sign in with your email."
 - Page number and greensheet name in a running footer when the sheet spans pages. An item never breaks across a page.
 

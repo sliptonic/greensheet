@@ -18,7 +18,7 @@
       {% for s in for_me %}
       <li{% if s.archived %} class="archived"{% endif %}>
         <a href="{{ s.get_absolute_url }}">
-          <span class="mark sm"></span>
+          {% include "sheets/_mark.html" with sheet=s cls="sm" %}
           <span class="name">{{ s.name }}</span>
           <span class="who">from {{ s.requester.display }}{% if s.is_flip_side %} · flip side{% endif %}</span>
         </a>
@@ -39,7 +39,7 @@
       {% for s in set_by_me %}
       <li{% if s.archived %} class="archived"{% endif %}>
         <a href="{{ s.get_absolute_url }}">
-          <span class="mark sm"></span>
+          {% include "sheets/_mark.html" with sheet=s cls="sm" %}
           <span class="name">{{ s.name }}</span>
           <span class="who">for {{ s.fulfiller.display }}{% if s.is_flip_side %} · flip side{% endif %}</span>
         </a>
@@ -53,6 +53,7 @@
       <h3>New greensheet</h3>
       {% if not user.name %}<label>Your name <input name="your_name" required></label>{% endif %}
       <label>Name of the greensheet <input name="name" required placeholder="2025 tax engagement"></label>
+      {% include "sheets/_icon_field.html" %}
       <label>For (their email) <input type="email" name="fulfiller_email" required></label>
       <label>Their name <input name="fulfiller_name"></label>
       <label>Your contact email for this greensheet <input type="email" name="contact_email" value="{{ user.email }}"></label>

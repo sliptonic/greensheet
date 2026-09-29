@@ -1,8 +1,10 @@
 {% extends "base.html" %}
+{% load sheet_extras %}
 {% block title %}Flip side · {{ sheet.name }} · Greensheet{% endblock %}
 {% block mainclass %}gs{% endblock %}
+{% block icon %}<link rel="icon" href="{{ sheet|favicon }}" type="image/svg+xml">{% endblock %}
 {% block content %}
-<div class="top-line"><span class="mark"></span><h1>The flip side</h1></div>
+<div class="top-line">{% include "sheets/_mark.html" %}<h1>The flip side</h1></div>
 <p class="from">of <b>{{ sheet.name }}</b> · from {{ sheet.requester.display }}</p>
 
 <div class="prose">
@@ -13,6 +15,7 @@
 
 <form method="post" class="row flip-confirm">{% csrf_token %}
   <button type="submit">Create the flip side</button>
-  <a href="{{ sheet.get_absolute_url }}">Not now</a>
+  <a href="{{ sheet.get_absolute_url }}" data-flip="back">Not now</a>
 </form>
+{% include "sheets/_corner.html" with href=sheet.get_absolute_url back=True label="Turn back to the front" tip="Turn the sheet back over to the front." %}
 {% endblock %}

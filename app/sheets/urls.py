@@ -24,6 +24,7 @@ urlpatterns = [
     path("s/<str:code>/items", views.add_item, name="add_item"),
     path("s/<str:code>/items/<int:number>/complete", views.complete, name="complete"),
     path("s/<str:code>/items/<int:number>/reopen", views.reopen, name="reopen"),
+    path("s/<str:code>/items/<int:number>", views.item_row, name="item_row"),
     path("s/<str:code>/items/<int:number>/edit", views.edit_item, name="edit_item"),
     path("s/<str:code>/items/<int:number>/delete", views.delete_item, name="delete_item"),
 ]

@@ -1,16 +1,15 @@
 {% extends "base.html" %}
+{% load sheet_extras %}
 {% block title %}{{ sheet.name }} · Greensheet{% endblock %}
 {% block mainclass %}gs{% endblock %}
+{% block icon %}<link rel="icon" href="{{ sheet|favicon }}" type="image/svg+xml">{% endblock %}
 {% block content %}
 {% if preview %}
 <div class="preview-bar no-print">Previewing as {{ sheet.fulfiller.display }} will see it. <a href="{{ sheet.get_absolute_url }}">Back to editing</a></div>
 {% endif %}
-<div class="top-line"><span class="mark"></span><h1>{{ sheet.name }}</h1></div>
+<div class="top-line">{% include "sheets/_mark.html" %}<h1>{{ sheet.name }}</h1></div>
 <p class="from">From <b>{{ sheet.requester.display }}</b> · for {{ sheet.fulfiller.display }}{% if sheet.is_flip_side %} · <a href="{{ sheet.flip_of.get_absolute_url }}" class="no-print">flip side of {{ sheet.flip_of.name }}</a><span class="print-only-inline">flip side of {{ sheet.flip_of.name }}</span>{% endif %}</p>
-<p class="meta no-print">
-  {{ items|length }} item{{ items|length|pluralize }} · {{ done_count }} complete
-  {% if sheet.archived %} · archived {{ sheet.archived_at|date:"D, M j" }}{% endif %}
-</p>
+{% include "sheets/_meta.html" %}
 
 <div class="print-only print-head">
   <p>{{ sheet.contact_email }}{% if sheet.contact_phone %} · {{ sheet.contact_phone }}{% endif %}</p>
@@ -25,6 +24,7 @@
   {% endfor %}
   {% if not items %}<li class="item empty"><span></span><span></span><p class="soft">No items yet.</p></li>{% endif %}
 </ol>
+<p class="undo no-print" id="undo" aria-live="polite"></p>
 
 {% if role == "requester" and not sheet.archived %}
 <form method="post" action="{% url 'add_item' sheet.code %}" class="add no-print">{% csrf_token %}
@@ -41,9 +41,7 @@
   <a href="{% url 'history' sheet.code %}">History</a>
   <a href="#" onclick="window.print();return false;">Print</a>
   <form method="post" action="{% url 'digest_toggle' sheet.code %}" class="inline">{% csrf_token %}<button class="linkish" type="submit">Daily summary: {% if digest.enabled %}on{% else %}off{% endif %}</button></form>
-  {% if done_count %}
-    {% if show_completed %}<a href="?completed=hide">Hide completed</a>{% else %}<a href="?completed=show">Show completed</a>{% endif %}
-  {% endif %}
+  {% include "sheets/_completed_toggle.html" %}
   {% if role == "requester" %}
     <a href="?preview=1">Preview as {{ sheet.fulfiller.display }}</a>
     <a href="{% url 'edit_sheet' sheet.code %}">Edit details</a>
@@ -53,45 +51,66 @@
       <form method="post" action="{% url 'archive' sheet.code %}" class="inline">{% csrf_token %}<button class="linkish" type="submit">Archive</button></form>
     {% endif %}
   {% endif %}
-  <a class="r" href="{{ sheet.absolute_url }}" target="_blank" rel="noopener" title="Permanent address of this greensheet, opens in a new tab">{{ sheet.short_url }}</a>
+  <a class="r" href="{{ sheet_url }}" target="_blank" rel="noopener" title="Permanent address of this greensheet, opens in a new tab">{{ sheet_short_url }}</a>
 </div>
 
 {% if not preview and paired or not preview and can_create_flip %}
-<a class="corner no-print" href="{% url 'flip' sheet.code %}" data-flip
-   aria-label="{% if paired %}Turn over to the {% if sheet.is_flip_side %}front{% else %}flip side{% endif %}{% else %}Turn over to create the flip side{% endif %}"
-   title="{% if paired %}{% if sheet.is_flip_side %}Front{% else %}Flip side{% endif %}{% else %}Flip side{% endif %}">
-  <svg viewBox="0 0 64 64" aria-hidden="true"><path class="under" d="M64 0v64H0z"/><path class="flap" d="M0 0h64L0 64z"/><path class="crease" d="M64 0L0 64" /></svg>
-</a>
+{% if paired %}
+  {% if sheet.is_flip_side %}
+    {% include "sheets/_corner.html" with href=paired.get_absolute_url back=True label="Turn over to the front" tip="Turn the sheet over to the front, what "|add:paired.requester.display|add:" needs from "|add:paired.fulfiller.display|add:"." %}
+  {% else %}
+    {% include "sheets/_corner.html" with href=paired.get_absolute_url label="Turn over to the flip side" tip="Turn the sheet over. The flip side is what "|add:paired.requester.display|add:" needs from "|add:paired.fulfiller.display|add:"." %}
+  {% endif %}
+{% else %}
+  {% include "sheets/_corner.html" with href=flip_url label="Turn over to create the flip side" tip="Turn the sheet over. A greensheet has two faces. Use the back to set out what you need from "|add:sheet.requester.display|add:"." %}
+{% endif %}
 {% endif %}
 <script>
 (function(){
   var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   var main = document.querySelector('main');
   if (!main) return;
-  if (location.search.indexOf('flipped=1') !== -1) {
-    if (!reduce) {
-      main.classList.add('flip-in');
-      requestAnimationFrame(function(){ requestAnimationFrame(function(){ main.classList.remove('flip-in'); }); });
-    }
-    if (history.replaceState) history.replaceState(null, '', location.pathname);
-  }
-  var corner = document.querySelector('[data-flip]');
-  if (corner && !reduce) {
-    corner.addEventListener('click', function(e){
-      e.preventDefault();
-      var href = corner.getAttribute('href');
-      var done = false;
-      function go(){ if (!done) { done = true; location.href = href; } }
-      main.addEventListener('transitionend', go, {once:true});
-      main.classList.add('flip-out');
-      setTimeout(go, 400);
-    });
-  }
+  // In-place editing: focus the title; Escape cancels.
+  document.addEventListener('htmx:afterSettle', function(){
+    var t = document.querySelector('.item.editing input[name=title]');
+    if (t) t.focus();
+  });
+  document.addEventListener('keydown', function(e){
+    if (e.key !== 'Escape') return;
+    var row = e.target.closest && e.target.closest('.item.editing');
+    var cancel = row && row.querySelector('button[hx-get]');
+    if (cancel) cancel.click();
+  });
+  // The undo line shows for a while after a row leaves, then goes quiet.
+  var undoTimer = null;
+  document.addEventListener('htmx:afterSettle', function(){
+    var u = document.getElementById('undo');
+    if (!u || !u.textContent.trim()) return;
+    clearTimeout(undoTimer);
+    undoTimer = setTimeout(function(){ u.innerHTML = ''; }, 9000);
+  });
+  // Completed items leave the list: a beat to see the check, then fold away.
+  document.addEventListener('htmx:afterSettle', function(){
+    var el = document.querySelector('.item.leaving:not(.folding)');
+    if (!el) return;
+    el.classList.add('folding');
+    if (reduce) { el.remove(); return; }
+    el.style.height = el.offsetHeight + 'px';
+    el.style.overflow = 'hidden';
+    setTimeout(function(){
+      el.style.height = '0px';
+      el.style.paddingTop = '0px';
+      el.style.paddingBottom = '0px';
+      el.style.opacity = '0';
+      el.addEventListener('transitionend', function(ev){ if (ev.propertyName === 'height') el.remove(); });
+      setTimeout(function(){ if (el.parentNode) el.remove(); }, 800);
+    }, 520);
+  });
 })();
 </script>
 <div class="print-only print-tail">
   <img class="qr" src="{{ qr }}" alt="QR code to the live greensheet" width="80" height="80">
-  <div class="back">Scan to open. Sign in with your email.<span class="u">{{ sheet.short_url }}</span></div>
+  <div class="back">Scan to open. Sign in with your email.<span class="u">{{ sheet_short_url }}</span></div>
   <div class="pg">{{ sheet.name }}</div>
 </div>
 {% endblock %}

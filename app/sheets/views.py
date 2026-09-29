@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, timedelta
 from functools import wraps
 
 import segno
@@ -14,7 +14,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_http_methods, require_POST
 
 from . import services
-from .models import ApiToken, Greensheet, MagicLink, Person, Webhook
+from .models import ApiToken, Greensheet, MagicLink, Person, Visit, Webhook
 from .services import Refused
 
 # ---------------------------------------------------------------- helpers
@@ -72,27 +72,90 @@ def _parse_date(s):
         raise Refused("Enter the due date as YYYY-MM-DD.")
 
 
+def _site_url(request):
+    """The public address of this instance as this page should print it."""
+    if settings.SITE_URL_EXPLICIT:
+        return settings.SITE_URL
+    return request.build_absolute_uri("/").rstrip("/")
+
+
+def _show_completed(request, sheet):
+    """Completed items are hidden unless this person chose to see them."""
+    return request.session.get(f"show_completed:{sheet.code}", False)
+
+
+def _counts(sheet):
+    items = list(sheet.items.all())
+    done = sum(1 for i in items if i.complete)
+    return items, len(items) - done, done
+
+
 def _item_response(request, sheet, role, item):
     if _is_htmx(request):
-        return render(request, "sheets/_item.html", {"sheet": sheet, "role": role, "item": item})
+        items, open_count, done_count = _counts(sheet)
+        show = _show_completed(request, sheet)
+        return render(
+            request,
+            "sheets/_item_swap.html",
+            {
+                "sheet": sheet,
+                "role": role,
+                "item": item,
+                # A newly completed item leaves the list when completed items are hidden.
+                "leaving": item.complete and not show,
+                "items": items,
+                "open_count": open_count,
+                "done_count": done_count,
+                "show_completed": show,
+            },
+        )
     return redirect(sheet)
 
 
+# A visit lasts this long: refreshing within it keeps the "new" tags; the
+# next visit after it starts a fresh baseline.
+VISIT_WINDOW = timedelta(minutes=10)
+
+
+def _mark_new(request, sheet, role, items, preview):
+    """Tag items added since this person's previous visit. Fulfiller only:
+    the requester added them. Nothing is recorded for a preview."""
+    if preview:
+        return
+    now = timezone.now()
+    visit, created = Visit.objects.get_or_create(greensheet=sheet, person=request.user, defaults={"seen_at": now})
+    if created:
+        return
+    since = visit.seen_at
+    if now - since > VISIT_WINDOW:
+        visit.seen_at = now
+        visit.save(update_fields=["seen_at"])
+    if role != "fulfiller":
+        return
+    for it in items:
+        it.is_new = not it.complete and it.created_at > since
+
+
 def _sheet_context(request, sheet, role, preview=False):
-    show_completed = request.session.get(f"show_completed:{sheet.code}", True)
-    items = list(sheet.items.all())
-    qr = segno.make(sheet.absolute_url, error="m").svg_data_uri(scale=4, border=1, dark="#111111", light=None)
+    show_completed = _show_completed(request, sheet)
+    items, open_count, done_count = _counts(sheet)
+    _mark_new(request, sheet, role, items, preview)
+    sheet_url = _site_url(request) + sheet.get_absolute_url()
+    qr = segno.make(sheet_url, error="m").svg_data_uri(scale=4, border=1, dark="#111111", light=None)
     sub = services.digest_for(sheet, request.user)
     paired = sheet.paired
     return {
         "sheet": sheet,
+        "sheet_url": sheet_url,
+        "sheet_short_url": sheet_url.split("://", 1)[-1],
         "role": role,
         "paired": paired,
         "preview": preview,
         "can_create_flip": paired is None and role == "fulfiller" and not sheet.is_flip_side and not preview,
+        "flip_url": reverse("flip", args=[sheet.code]),
         "items": items,
-        "open_count": sum(1 for i in items if not i.complete),
-        "done_count": sum(1 for i in items if i.complete),
+        "open_count": open_count,
+        "done_count": done_count,
         "show_completed": show_completed,
         "qr": qr,
         "digest": sub,
@@ -192,6 +255,7 @@ def new_sheet(request):
             fulfiller_name=p.get("fulfiller_name", ""),
             contact_email=p.get("contact_email", ""),
             contact_phone=p.get("contact_phone", ""),
+            icon=p.get("icon", ""),
         )
     except Refused as e:
         messages.error(request, str(e))
@@ -279,7 +343,12 @@ def edit_sheet(request, sheet, role):
     if request.method == "POST":
         p = request.POST
         services.edit_greensheet(
-            sheet, request.user, name=p.get("name"), contact_email=p.get("contact_email"), contact_phone=p.get("contact_phone")
+            sheet,
+            request.user,
+            name=p.get("name"),
+            contact_email=p.get("contact_email"),
+            contact_phone=p.get("contact_phone"),
+            icon=p.get("icon"),
         )
         return redirect(sheet)
     return render(request, "sheets/edit_sheet.html", {"sheet": sheet, "role": role})
@@ -391,6 +460,8 @@ def reopen(request, sheet, role, number):
 @requester_only
 @require_http_methods(["GET", "POST"])
 def edit_item(request, sheet, role, number):
+    """Edit in place over htmx: GET swaps the row for a form, POST swaps it
+    back. Without htmx the same URL is an ordinary page."""
     item = _item(sheet, number)
     if request.method == "POST":
         p = request.POST
@@ -404,9 +475,24 @@ def edit_item(request, sheet, role, number):
                 clear_due=not p.get("due_date", "").strip(),
             )
         except Refused as e:
+            if _is_htmx(request):
+                return HttpResponseBadRequest(str(e))
             messages.error(request, str(e))
-        return redirect(sheet)
-    return render(request, "sheets/edit_item.html", {"sheet": sheet, "role": role, "item": item})
+            return redirect(sheet)
+        return _item_response(request, sheet, role, item)
+    ctx = {"sheet": sheet, "role": role, "item": item}
+    if _is_htmx(request):
+        return render(request, "sheets/_item_edit.html", ctx)
+    return render(request, "sheets/edit_item.html", ctx)
+
+
+@party
+def item_row(request, sheet, role, number):
+    """One item as it appears on the sheet. Cancel in the in-place editor."""
+    item = _item(sheet, number)
+    if _is_htmx(request):
+        return render(request, "sheets/_item.html", {"sheet": sheet, "role": role, "item": item})
+    return redirect(sheet)
 
 
 @party

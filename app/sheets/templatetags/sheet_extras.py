@@ -8,7 +8,15 @@ from urllib.parse import quote
 
 from django import template
 
+from ..icons import favicon_data_uri
+
 register = template.Library()
+
+
+@register.filter
+def favicon(sheet):
+    """Tab icon for this greensheet: the mark, with its glyph if it has one."""
+    return favicon_data_uri(sheet.icon)
 
 
 def channels_for(sheet, item):

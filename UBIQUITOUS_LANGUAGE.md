@@ -14,7 +14,7 @@ The person who runs an instance. The operator has no role on any greensheet by d
 
 ### Greensheet
 
-A set of expected actions a **requester** sets for a single **fulfiller**. A greensheet contains zero or more **items** and carries the requester's **contact details** for that relationship. It may persist indefinitely, with items added and completed over time. A greensheet can be **archived**.
+A set of expected actions a **requester** sets for a single **fulfiller**. A greensheet contains zero or more **items** and carries the requester's **contact details** for that relationship. It may persist indefinitely, with items added and completed over time. A greensheet can be **archived**. A greensheet may carry an **icon**, one character or emoji the requester chose, drawn on the mark so its tab and its row stand out.
 
 A greensheet has exactly one requester and exactly one fulfiller, bound for its lifetime. Neither can be changed.
 
@@ -76,7 +76,7 @@ A human being known to the instance, identified by an email address. A person ho
 
 ### Requester
 
-The role held by the person who creates and owns a greensheet. The requester creates, edits, and deletes items, sets contact details, invites the fulfiller, can show or hide completed items, can revoke the fulfiller's sessions, and can archive or unarchive the greensheet. Each greensheet has exactly one requester.
+The role held by the person who creates and owns a greensheet. The requester creates, edits, and deletes items, sets contact details, invites the fulfiller, can revoke the fulfiller's sessions, and can archive or unarchive the greensheet. Each greensheet has exactly one requester.
 
 ### Fulfiller
 
@@ -104,7 +104,7 @@ The state of an item that has not been marked complete.
 
 ### Complete
 
-The state of an item that has been marked done. Completed items remain on the greensheet; the requester may show or hide them. Either role may **reopen** a completed item; doing so is logged.
+The state of an item that has been marked done. Completed items remain on the greensheet but are hidden from the list by default; either party may show or hide them, and the choice is remembered per device. Either role may **reopen** a completed item; doing so is logged.
 
 ### Archive
 

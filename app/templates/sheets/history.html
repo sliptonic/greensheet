@@ -1,8 +1,10 @@
 {% extends "base.html" %}
+{% load sheet_extras %}
 {% block title %}History · {{ sheet.name }} · Greensheet{% endblock %}
 {% block mainclass %}gs{% endblock %}
+{% block icon %}<link rel="icon" href="{{ sheet|favicon }}" type="image/svg+xml">{% endblock %}
 {% block content %}
-<div class="top-line"><span class="mark"></span><h1>{{ sheet.name }}</h1></div>
+<div class="top-line">{% include "sheets/_mark.html" %}<h1>{{ sheet.name }}</h1></div>
 <p class="from">History · <a href="{{ sheet.get_absolute_url }}">back to the greensheet</a></p>
 <ol class="history">
   {% for e in events %}

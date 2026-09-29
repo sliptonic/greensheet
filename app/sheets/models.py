@@ -87,6 +87,9 @@ class Person(AbstractBaseUser, PermissionsMixin):
 class Greensheet(models.Model):
     code = models.CharField(max_length=12, unique=True, default=short_code)
     name = models.CharField(max_length=200)
+    # One character or emoji the requester chose, drawn on the green mark so
+    # this greensheet's tab and row stand out from the others. Blank: plain mark.
+    icon = models.CharField(max_length=16, blank=True, default="")
     requester = models.ForeignKey(Person, on_delete=models.CASCADE, related_name="sheets_set")
     fulfiller = models.ForeignKey(Person, on_delete=models.PROTECT, related_name="sheets_for")
     contact_email = models.EmailField()
@@ -216,6 +219,18 @@ class MagicLink(models.Model):
     @property
     def absolute_url(self):
         return settings.SITE_URL + reverse("consume", args=[self.token])
+
+
+class Visit(models.Model):
+    """When a person last opened a greensheet. Items added since are marked
+    new for the fulfiller. Not shown to the other party; it is not a read receipt."""
+
+    greensheet = models.ForeignKey(Greensheet, on_delete=models.CASCADE, related_name="visits")
+    person = models.ForeignKey(Person, on_delete=models.CASCADE, related_name="visits")
+    seen_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["greensheet", "person"], name="visit_unique")]
 
 
 class DigestSubscription(models.Model):

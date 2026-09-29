@@ -1,0 +1,7 @@
+{# The folded corner. href: where the turn goes. back: turn the other way. #}
+<div class="corner-wrap no-print">
+  <a class="corner" href="{{ href }}" data-flip="{% if back %}back{% else %}forward{% endif %}" id="corner" aria-describedby="corner-tip" aria-label="{{ label }}">
+    <svg viewBox="0 0 64 64" aria-hidden="true"><path class="under" d="M64 0v64H0z"/><path class="flap" d="M0 0h64L0 64z"/><path class="crease" d="M64 0L0 64" /></svg>
+  </a>
+  <span class="corner-tip" id="corner-tip" role="tooltip">{{ tip }}</span>
+</div>

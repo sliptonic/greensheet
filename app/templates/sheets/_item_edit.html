@@ -1,0 +1,14 @@
+<li class="item editing" id="item-{{ item.number }}">
+  <span class="n">{{ item.number }}</span>
+  <span class="box static" aria-hidden="true"></span>
+  <form method="post" action="{% url 'edit_item' sheet.code item.number %}" class="edit-form"
+        hx-post="{% url 'edit_item' sheet.code item.number %}" hx-target="#item-{{ item.number }}" hx-swap="outerHTML">{% csrf_token %}
+    <input name="title" value="{{ item.title }}" required aria-label="Title" class="t">
+    <textarea name="note" rows="2" placeholder="Note, optional" aria-label="Note">{{ item.note }}</textarea>
+    <div class="add-row">
+      <label class="due-label">Due <input name="due_date" type="date" value="{{ item.due_date|date:'Y-m-d' }}" aria-label="Due date"></label>
+      <button type="submit">Save</button>
+      <button type="button" class="linkish" hx-get="{% url 'item_row' sheet.code item.number %}" hx-target="#item-{{ item.number }}" hx-swap="outerHTML">Cancel</button>
+    </div>
+  </form>
+</li>

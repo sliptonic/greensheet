@@ -11,6 +11,8 @@ from django.db import transaction
 from django.urls import reverse
 from django.utils import timezone
 
+from .icons import clean_icon
+
 from . import webhooks
 from .models import (
     ApiToken,
@@ -119,7 +121,7 @@ def consume_magic_link(token):
 
 
 @transaction.atomic
-def create_greensheet(requester, *, name, fulfiller_email, fulfiller_name="", contact_email="", contact_phone=""):
+def create_greensheet(requester, *, name, fulfiller_email, fulfiller_name="", contact_email="", contact_phone="", icon=""):
     name = name.strip()
     if not name:
         raise Refused("Give the greensheet a name.")
@@ -135,6 +137,7 @@ def create_greensheet(requester, *, name, fulfiller_email, fulfiller_name="", co
 
     sheet = Greensheet.objects.create(
         name=name,
+        icon=clean_icon(icon),
         requester=requester,
         fulfiller=fulfiller,
         contact_email=(contact_email or requester.email).strip().lower(),
@@ -190,11 +193,14 @@ def decline_invite(token):
     return invite
 
 
-def edit_greensheet(sheet, actor, *, name=None, contact_email=None, contact_phone=None):
+def edit_greensheet(sheet, actor, *, name=None, contact_email=None, contact_phone=None, icon=None):
     changed = {}
     if name is not None and name.strip() and name.strip() != sheet.name:
         changed["name"] = [sheet.name, name.strip()]
         sheet.name = name.strip()
+    if icon is not None and clean_icon(icon) != sheet.icon:
+        changed["icon"] = [sheet.icon, clean_icon(icon)]
+        sheet.icon = clean_icon(icon)
     if contact_email is not None and contact_email.strip() and contact_email.strip().lower() != sheet.contact_email:
         changed["contact_email"] = [sheet.contact_email, contact_email.strip().lower()]
         sheet.contact_email = contact_email.strip().lower()
@@ -253,6 +259,7 @@ def create_flip_side(sheet, actor):
     name = f"Flip side of {sheet.name}"[:200]
     flip = Greensheet.objects.create(
         name=name,
+        icon=sheet.icon,
         requester=sheet.fulfiller,
         fulfiller=sheet.requester,
         contact_email=actor.email,

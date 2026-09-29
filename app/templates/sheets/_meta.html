@@ -1,0 +1,4 @@
+<p class="meta no-print" id="meta"{% if oob %} hx-swap-oob="true"{% endif %}>
+  {{ items|length }} item{{ items|length|pluralize }} · {{ done_count }} complete
+  {% if sheet.archived %} · archived {{ sheet.archived_at|date:"D, M j" }}{% endif %}
+</p>

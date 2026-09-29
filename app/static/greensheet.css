@@ -33,6 +33,19 @@ button.linkish:hover{border-bottom-color:var(--ink)}
 .mark{position:relative;display:inline-block;width:14px;height:18px;background:var(--sheet);vertical-align:-3px;flex:none;clip-path:polygon(0 0,62% 0,100% 34%,100% 100%,0 100%)}
 .mark::after{content:"";position:absolute;right:0;top:0;width:38%;height:34%;background:var(--paper);opacity:.85;clip-path:polygon(0 0,0 100%,100% 100%)}
 .mark.sm{width:11px;height:14px;vertical-align:-2px;margin-right:8px}
+/* a glyph on the mark: the mark grows a little to carry it */
+.mark.has-glyph{width:22px;height:28px;vertical-align:-6px}
+.mark.sm.has-glyph{width:17px;height:22px;vertical-align:-5px}
+.mark .glyph{position:absolute;left:0;right:0;top:30%;bottom:0;display:flex;align-items:center;justify-content:center;font-family:var(--sans);font-size:13px;line-height:1;color:var(--paper);font-style:normal;font-weight:500}
+.mark.sm .glyph{font-size:10px}
+.top-line .mark.has-glyph{margin-top:2px}
+.icon-row{display:flex;align-items:center;gap:12px}
+.icon-input{width:5em;text-align:center;font-size:17px}
+.icon-preview.empty .glyph{display:none}
+.icon-picks{display:flex;flex-wrap:wrap;gap:4px;margin-top:-6px}
+.icon-pick{background:#fff;border:1px solid var(--rule);width:32px;height:32px;padding:0;cursor:pointer;font-size:16px;line-height:1;color:var(--ink)}
+.icon-pick:hover,.icon-pick:focus-visible{border-color:var(--ink);outline:none}
+.icon-pick.none{width:auto;padding:0 10px;font-size:12px;color:var(--ink-soft);font-family:var(--sans)}
 
 /* ---------- chrome ---------- */
 header.top{display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-bottom:1px solid var(--rule);font-size:13px;color:var(--ink-soft)}
@@ -76,6 +89,17 @@ main.gs{max-width:760px;margin:0 auto;padding:44px 32px 64px;font-family:var(--s
 .item.done .box{background:var(--ink)}
 .item.done .box::after{content:"";position:absolute;left:5px;top:1px;width:5px;height:10px;border:solid var(--paper);border-width:0 2px 2px 0;transform:rotate(42deg)}
 .item .t{margin:0;font-weight:600}
+.item .new{display:inline-block;font-family:var(--sans);font-size:10.5px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--paper);background:var(--ink);padding:1px 6px 0;margin-left:8px;vertical-align:3px;line-height:1.5}
+/* editing in place: the row becomes the form, same columns */
+.item.editing .edit-form{display:grid;gap:8px;font-family:var(--sans);margin:0}
+.item.editing input.t{font-family:var(--serif);font-size:17px;font-weight:600;padding:6px 8px;margin-top:-4px}
+.item.editing textarea{font-family:var(--serif);font-size:16px}
+.item.editing .add-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap;font-size:13px}
+.item.editing .due-label{display:inline-flex;align-items:center;gap:8px;color:var(--ink-soft)}
+.item.editing button[type=submit]{background:var(--ink);color:var(--paper);border:0;padding:7px 14px;cursor:pointer}
+.undo{font-family:var(--sans);font-size:13px;color:var(--ink-soft);margin:10px 0 0 28px;min-height:20px}
+.undo:not(:empty){animation:undo-in .3s ease .9s both}
+@keyframes undo-in{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
 .item.done .t{color:var(--ink-soft);font-weight:400}
 .item .note{margin:4px 0 0;color:var(--ink-soft);font-size:16px;max-width:62ch}
 .item .row{display:flex;flex-wrap:wrap;gap:8px 18px;margin-top:8px;font-family:var(--sans);font-size:13px}
@@ -91,7 +115,7 @@ main.gs{max-width:760px;margin:0 auto;padding:44px 32px 64px;font-family:var(--s
 .add{display:grid;grid-template-columns:1fr auto auto;gap:10px;margin:22px 0 0 28px;font-family:var(--sans)}
 .add textarea{grid-column:1/-1}
 .add button{background:var(--ink);color:var(--paper);border:0;padding:8px 14px;cursor:pointer}
-.gs .foot{display:flex;flex-wrap:wrap;gap:8px 22px;margin-top:28px;padding-left:28px;font-family:var(--sans);font-size:13px;color:var(--ink-soft)}
+.gs .foot{display:flex;flex-wrap:wrap;gap:8px 22px;margin-top:28px;padding:0 72px 0 28px;font-family:var(--sans);font-size:13px;color:var(--ink-soft)}
 .gs .foot a{text-decoration:none;color:var(--ink-soft);border-bottom:1px solid var(--rule)}
 .gs .foot a:hover{color:var(--ink);border-bottom-color:var(--ink)}
 .gs .foot .r{margin-left:auto;color:var(--ink-faint);font-family:var(--mono);font-size:12px;text-decoration:none}
@@ -112,6 +136,7 @@ main.gs{max-width:760px;margin:0 auto;padding:44px 32px 64px;font-family:var(--s
   .top-line h1{font-size:17pt}
   .mark{background:#111}
   .mark::after{background:#fff;opacity:1}
+  .mark .glyph{color:#fff}
   .gs .from{font-size:10pt;color:#333;margin-left:23px}
   .print-head{margin:0 0 16px 23px;font-family:var(--sans);font-size:10pt;color:#333}
   .print-head .asof{font-family:var(--mono);font-size:8.5pt;color:#555;letter-spacing:.02em;margin:2px 0 0}
@@ -142,28 +167,48 @@ main.gs{max-width:760px;margin:0 auto;padding:44px 32px 64px;font-family:var(--s
 .print-only-inline{display:none}
 .hooks li{align-items:flex-start;font-family:var(--sans);font-size:15px}
 
-/* the folded corner, bottom right */
-.corner{position:fixed;right:0;bottom:0;width:64px;height:64px;display:block;z-index:5;transition:width .18s ease,height .18s ease}
+/* the folded corner, bottom right of the sheet itself.
+   It lives inside main and sticks to the bottom of the window, so it is
+   always on the sheet's own edge: before, during, and after the turn. */
+main.gs{--gs-pad:32px}
+@media (max-width:640px){main.gs{--gs-pad:18px}}
+.corner-wrap{position:sticky;bottom:0;z-index:5;width:64px;height:64px;margin:0 calc(-1 * var(--gs-pad)) -64px auto;pointer-events:none}
+.corner{position:absolute;right:0;bottom:0;width:64px;height:64px;display:block;pointer-events:auto;transition:width .18s ease,height .18s ease}
 .corner svg{width:100%;height:100%;display:block}
 .corner .under{fill:var(--sheet)}
 .corner .flap{fill:#E4EBDF}
 .corner .crease{fill:none;stroke:rgba(0,0,0,.18);stroke-width:1}
 .corner:hover,.corner:focus-visible{width:84px;height:84px;outline:none}
 .corner:focus-visible .flap{fill:#D6E0D0}
+.corner-tip{position:absolute;right:16px;bottom:92px;width:max-content;max-width:260px;padding:10px 12px;background:var(--ink);color:var(--paper);font-family:var(--sans);font-size:13px;line-height:1.4;box-shadow:0 8px 24px -12px rgba(0,0,0,.5);opacity:0;visibility:hidden;transform:translateY(4px);transition:opacity .15s ease,transform .15s ease,visibility 0s linear .15s}
+.corner-tip::after{content:"";position:absolute;right:14px;bottom:-6px;border:6px solid transparent;border-bottom:0;border-top-color:var(--ink)}
+.corner-tip b{font-weight:600}
+.corner-tip i{font-style:italic}
+.corner:hover + .corner-tip,.corner:focus-visible + .corner-tip{opacity:1;visibility:visible;transform:none;transition-delay:.25s,.25s,.25s}
 
-/* turning the sheet over */
+/* turning the sheet over: out to edge-on on this page, in from edge-on on
+   the next. html.flip-in is set in <head> so the new page never paints flat
+   first. */
 body{perspective:1600px}
-main{transform-origin:50% 50%;backface-visibility:hidden}
-main.flip-out{transition:transform .28s ease-in;transform:rotateY(90deg)}
-main.flip-in{transform:rotateY(-90deg)}
-main:not(.flip-in):not(.flip-out){transition:transform .28s ease-out}
+main{transform-origin:50% 50%;backface-visibility:hidden;transition:transform .42s cubic-bezier(.2,.7,.3,1)}
+main.flip-out,main.flip-out-back{transition:transform .36s cubic-bezier(.6,.05,.9,.4)}
+main.flip-out{transform:rotateY(90deg)}
+main.flip-out-back{transform:rotateY(-90deg)}
+html.flip-in main{transform:rotateY(-90deg);transition:none}
+html.flip-in-back main{transform:rotateY(90deg);transition:none}
 @media (prefers-reduced-motion:reduce){
-  main,main.flip-out,main.flip-in{transition:none;transform:none}
+  main,main.flip-out,main.flip-out-back,html.flip-in main,html.flip-in-back main{transition:none;transform:none}
 }
+
+/* completing an item: the check lands, then the row folds away */
+.item.leaving .box{animation:check-land .32s cubic-bezier(.2,1.4,.4,1)}
+@keyframes check-land{0%{transform:scale(.6)}60%{transform:scale(1.18)}100%{transform:none}}
+.item.folding{transition:height .34s ease-in,padding .34s ease-in,opacity .22s ease-in;border-top-color:transparent}
+@media (prefers-reduced-motion:reduce){.item.leaving .box{animation:none}}
 @media print{
-  .corner{display:none}
+  .corner-wrap{display:none}
   .print-only-inline{display:inline}
-  main{transform:none !important;transition:none !important}
+  main,html.flip-in main,html.flip-in-back main{transform:none !important;transition:none !important}
 }
 
 /* ---------- home: the desk ----------

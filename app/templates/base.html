@@ -4,7 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{% block title %}Greensheet{% endblock %}</title>
-<link rel="icon" href="{{ STATIC_URL|default:'/static/' }}mark.svg" type="image/svg+xml">
+{% block icon %}<link rel="icon" href="/static/mark.svg" type="image/svg+xml">{% endblock %}
+<link rel="manifest" href="/static/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/static/icon-180.png">
+<meta name="apple-mobile-web-app-title" content="Greensheet">
+<meta name="theme-color" content="#F3F7EF">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;500;600&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="/static/greensheet.css">
 <script>
@@ -14,6 +18,13 @@
   if(!m&&window.matchMedia){ m=matchMedia("(pointer:coarse)").matches&&!matchMedia("(pointer:fine)").matches; }
   document.documentElement.classList.add(m?"mobile":"desktop");
 })();
+</script>
+<script>
+// Arriving from a turn of the sheet: start edge-on, before first paint.
+if (!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) {
+  if (location.search.indexOf('flipped=1') !== -1) document.documentElement.classList.add('flip-in');
+  else if (location.search.indexOf('flipped=back') !== -1) document.documentElement.classList.add('flip-in-back');
+}
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/htmx/2.0.4/htmx.min.js" defer></script>
 </head>
@@ -33,6 +44,35 @@
 <main class="{% block mainclass %}page{% endblock %}">
 {% block content %}{% endblock %}
 </main>
+<script>
+(function(){
+  var h = document.documentElement, main = document.querySelector('main');
+  var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // Arriving mid-turn: finish turning in.
+  if (h.classList.contains('flip-in') || h.classList.contains('flip-in-back')) {
+    if (history.replaceState) history.replaceState(null, '', location.pathname);
+    requestAnimationFrame(function(){ requestAnimationFrame(function(){ h.classList.remove('flip-in', 'flip-in-back'); }); });
+  }
+  // Anything marked data-flip turns the sheet out, then goes where it points.
+  // "back" turns the other way, so a turn can be undone visually.
+  if (!main || reduce) return;
+  document.addEventListener('click', function(e){
+    var el = e.target.closest && e.target.closest('[data-flip]');
+    if (!el || e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+    e.preventDefault();
+    var back = el.getAttribute('data-flip') === 'back';
+    var href = el.getAttribute('href') + (back ? '?flipped=back' : '?flipped=1');
+    var done = false;
+    function go(){ if (!done) { done = true; location.href = href; } }
+    // Only the sheet's own turn counts; transitions on the corner bubble up here too.
+    main.addEventListener('transitionend', function(ev){
+      if (ev.target === main && ev.propertyName === 'transform') go();
+    });
+    main.classList.add(back ? 'flip-out-back' : 'flip-out');
+    setTimeout(go, 700);
+  });
+})();
+</script>
 <script src="/static/channels.js" defer></script>
 </body>
 </html>

@@ -1,0 +1,2 @@
+{# The mark, with the greensheet's glyph on it if it has one. cls: extra classes, e.g. "sm". #}
+<span class="mark {{ cls|default:'' }}{% if sheet.icon %} has-glyph{% endif %}">{% if sheet.icon %}<span class="glyph" aria-hidden="true">{{ sheet.icon }}</span>{% endif %}</span>

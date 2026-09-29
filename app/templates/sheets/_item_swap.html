@@ -1,0 +1,4 @@
+{% include "sheets/_item.html" %}
+{% include "sheets/_meta.html" with oob=True %}
+{% include "sheets/_completed_toggle.html" with oob=True %}
+{% if leaving %}<p class="undo no-print" id="undo" hx-swap-oob="true">Item {{ item.number }} done. <form method="post" action="{% url 'reopen' sheet.code item.number %}" class="inline">{% csrf_token %}<button type="submit" class="linkish">Undo</button></form></p>{% else %}<p class="undo no-print" id="undo" hx-swap-oob="true"></p>{% endif %}

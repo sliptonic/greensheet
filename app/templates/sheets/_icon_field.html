@@ -1,0 +1,21 @@
+{# Icon field with a small picker. value: current icon. #}
+<label>Icon <span class="soft">optional. One character or emoji on the mark, so this greensheet's tab stands out</span>
+  <span class="icon-row">
+    <input name="icon" value="{{ value|default:'' }}" maxlength="16" class="icon-input" aria-describedby="icon-help" autocomplete="off">
+    <span class="mark has-glyph icon-preview" aria-hidden="true"><span class="glyph"></span></span>
+  </span>
+</label>
+<div class="icon-picks" id="icon-help" role="group" aria-label="Pick an icon">
+  {% for g in "⭐ ✓ ★ ● ◆ ▲ § ¶ № ✉ ☎ ⚑ ⚙ ✂ ✎ ♪ ⌂ ⚖ ⌘ ⚓ ☀ ☕ ⚠ ♥ 🏠 🔑 🧾 📷 🧰 🐾"|make_list %}{% if g != " " %}<button type="button" class="icon-pick" data-glyph="{{ g }}">{{ g }}</button>{% endif %}{% endfor %}
+  <button type="button" class="icon-pick none" data-glyph="">none</button>
+</div>
+<script>
+(function(){
+  var input = document.querySelector('input[name=icon]'), prev = document.querySelector('.icon-preview .glyph');
+  function show(){ prev.textContent = input.value.trim(); prev.parentNode.classList.toggle('empty', !input.value.trim()); }
+  input.addEventListener('input', show); show();
+  document.querySelectorAll('.icon-pick').forEach(function(b){
+    b.addEventListener('click', function(){ input.value = b.getAttribute('data-glyph'); show(); input.focus(); });
+  });
+})();
+</script>

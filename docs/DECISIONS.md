@@ -367,3 +367,22 @@ Full specification of the hard copy is in `docs/DESIGN.md` under Surfaces.
 - The invite no longer counts against the fulfiller's magic-link rate limit.
 - Invite acceptance is recorded on the fulfiller's first sign-in, as before.
 - The sign-in form on a greensheet reveals nothing about the greensheet; it looks the same for any code.
+
+---
+
+## D23. A greensheet may carry one glyph on its mark
+
+**Status:** Accepted, 2026-09-29
+
+**Decision.** The requester may set an icon for a greensheet: one character or emoji, drawn in paper colour on the green mark. It appears on the browser tab, beside the name on the sheet, and on the row on the desk. The flip side inherits it. Nothing else about the mark changes: the shape, the fold, and the green are fixed, and the glyph never signals status.
+
+**Why.** The rule that the favicon is always the plain mark made every greensheet tab identical, which defeats the purpose of a findable tab once someone has several open. A glyph the requester chose is the smallest change that makes tabs tell apart, and it keeps the mark recognisable as Greensheet.
+
+**Rejected.**
+- *A colour per greensheet.* Green is identity. A palette would make some greensheets look less like Greensheet, and colour reads as status.
+- *Uploaded images.* Storage, moderation, and a mark that no longer looks like the mark.
+- *Auto-generated glyphs from the name.* Two greensheets with similar names get similar glyphs, and nobody chose them.
+
+**Consequences.**
+- The icon is one field, at most sixteen code points so a joined emoji fits, cleaned but never rejected.
+- Pages that are not about one greensheet keep the plain mark.
