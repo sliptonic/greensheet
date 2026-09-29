@@ -52,6 +52,14 @@
     <form method="post" action="{% url 'new_sheet' %}" class="stack" id="create-form" hidden>{% csrf_token %}
       <h3>New greensheet</h3>
       {% if not user.name %}<label>Your name <input name="your_name" required></label>{% endif %}
+      {% if set_by_me %}
+      <label>Start from <span class="soft">optional. Copies the items, with due dates counted from today</span>
+        <select name="copy_from">
+          <option value="">A blank greensheet</option>
+          {% for s in set_by_me %}<option value="{{ s.code }}"{% if s.code == copy_from %} selected{% endif %}>{{ s.name }}{% if s.open_items or s.done_items %} · {{ s.open_items|add:s.done_items }} item{{ s.open_items|add:s.done_items|pluralize }}{% endif %}</option>{% endfor %}
+        </select>
+      </label>
+      {% endif %}
       <label>Name of the greensheet <input name="name" required placeholder="2025 tax engagement"></label>
       {% include "sheets/_icon_field.html" %}
       <label>For (their email) <input type="email" name="fulfiller_email" required></label>
@@ -69,7 +77,7 @@
   function show(on){ f.hidden=!on; t.hidden=on; t.setAttribute('aria-expanded', on?'true':'false'); if(on){ var i=f.querySelector('input'); if(i) i.focus(); } }
   t.addEventListener('click', function(){ show(true); });
   c.addEventListener('click', function(){ show(false); });
-  {% if messages %}show(true);{% endif %}
+  {% if messages or copy_from %}show(true);{% endif %}
 })();
 </script>
 

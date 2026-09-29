@@ -45,6 +45,7 @@
   {% if role == "requester" %}
     <a href="?preview=1">Preview as {{ sheet.fulfiller.display }}</a>
     <a href="{% url 'edit_sheet' sheet.code %}">Edit details</a>
+    <a href="{% url 'home' %}?from={{ sheet.code }}" title="Start a new greensheet with these items for someone else">Set this for someone else</a>
     {% if sheet.archived %}
       <form method="post" action="{% url 'unarchive' sheet.code %}" class="inline">{% csrf_token %}<button class="linkish" type="submit">Unarchive</button></form>
     {% else %}

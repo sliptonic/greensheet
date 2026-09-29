@@ -239,6 +239,8 @@ def home(request):
         {
             "for_me": sheets.filter(fulfiller=me),
             "set_by_me": sheets.filter(requester=me),
+            # ?from=<code> opens the form with that greensheet as the start.
+            "copy_from": request.GET.get("from", ""),
         },
     )
 
@@ -247,9 +249,13 @@ def home(request):
 @require_POST
 def new_sheet(request):
     p = request.POST
+    copy_from = None
+    if p.get("copy_from"):
+        copy_from = get_object_or_404(Greensheet, code=p["copy_from"], requester=request.user)
     try:
         sheet = services.create_greensheet(
             request.user,
+            copy_from=copy_from,
             name=p.get("name", ""),
             fulfiller_email=p.get("fulfiller_email", ""),
             fulfiller_name=p.get("fulfiller_name", ""),

@@ -121,10 +121,18 @@ def consume_magic_link(token):
 
 
 @transaction.atomic
-def create_greensheet(requester, *, name, fulfiller_email, fulfiller_name="", contact_email="", contact_phone="", icon=""):
+def create_greensheet(
+    requester, *, name, fulfiller_email, fulfiller_name="", contact_email="", contact_phone="", icon="", copy_from=None
+):
+    """Set a greensheet for someone. With copy_from, one of the requester's own
+    greensheets, the items come along: titles, notes, and due dates kept at
+    the same distance from today as they were from that greensheet's start.
+    The same list for every new hire, every client, every tenant."""
     name = name.strip()
     if not name:
         raise Refused("Give the greensheet a name.")
+    if copy_from is not None and copy_from.requester_id != requester.id:
+        raise Refused("You can only start from a greensheet you created.")
     fulfiller, _ = Person.objects.get_or_create_by_email(fulfiller_email, fulfiller_name)
     if fulfiller.id == requester.id:
         raise Refused("A greensheet is for someone else. Enter another person's email.")
@@ -137,16 +145,31 @@ def create_greensheet(requester, *, name, fulfiller_email, fulfiller_name="", co
 
     sheet = Greensheet.objects.create(
         name=name,
-        icon=clean_icon(icon),
+        # Left blank, the icon comes along from the starting greensheet.
+        icon=clean_icon(icon) or (copy_from.icon if copy_from is not None else ""),
         requester=requester,
         fulfiller=fulfiller,
         contact_email=(contact_email or requester.email).strip().lower(),
         contact_phone=contact_phone.strip(),
     )
-    record("sheet.created", greensheet=sheet, actor=requester)
+    if copy_from is not None:
+        record("sheet.created", greensheet=sheet, actor=requester, copied_from=copy_from.code)
+        _copy_items(copy_from, sheet, requester)
+    else:
+        record("sheet.created", greensheet=sheet, actor=requester)
     invite = Invite.objects.create(greensheet=sheet)
     send_invite(invite)
     return sheet
+
+
+def _copy_items(source, sheet, actor):
+    start = timezone.localdate()
+    since = timezone.localtime(source.created_at).date()
+    for it in source.items.order_by("number"):
+        due = None
+        if it.due_date and it.due_date >= since:
+            due = start + (it.due_date - since)
+        add_item(sheet, actor, title=it.title, note=it.note, due_date=due)
 
 
 def send_invite(invite):

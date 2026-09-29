@@ -386,3 +386,23 @@ Full specification of the hard copy is in `docs/DESIGN.md` under Surfaces.
 **Consequences.**
 - The icon is one field, at most sixteen code points so a joined emoji fits, cleaned but never rejected.
 - Pages that are not about one greensheet keep the plain mark.
+
+---
+
+## D24. A new greensheet may start from one you created
+
+**Status:** Accepted, 2026-09-29
+
+**Decision.** When creating a greensheet, the requester may pick one of their own greensheets to start from. The new greensheet gets that one's items, in order, with titles and notes, and its icon unless a different one is given. A due date is kept at the same distance from today as it was from the starting greensheet's creation; one that was already in the past when that greensheet began is dropped. Completion, history, and the fulfiller do not come along. Any greensheet the requester created is a starting point, archived or not. The history records which one it started from.
+
+**Why.** The same list goes to every new hire, every tax client, every tenant. Typing it again is the friction that sends people to a commercial service with a "template" feature. There is no separate template object: the greensheet you already made is the template, which keeps one concept and lets a good list be reused the moment it exists.
+
+**Rejected.**
+- *A template type distinct from a greensheet.* A second thing to name, list, and manage, for no gain over "start from that one".
+- *Copying completion state.* A new greensheet starts with everything to do.
+- *Absolute due dates.* A copied "due Oct 3" is wrong the moment it is reused. Relative dates are what people mean.
+- *Starting from someone else's greensheet.* Its contents are theirs.
+
+**Consequences.**
+- "Set this for someone else" on any greensheet you own opens the create form with it selected.
+- Item numbers restart at 1 on the new greensheet.

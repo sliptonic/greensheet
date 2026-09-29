@@ -341,6 +341,8 @@ class Event(models.Model):
         k = self.kind
         it = self.item_label
         if k == "sheet.created":
+            if self.data.get("copied_from"):
+                return f"{who} created the greensheet, starting from another"
             return f"{who} created the greensheet"
         if k == "sheet.edited":
             return f"{who} edited the greensheet"

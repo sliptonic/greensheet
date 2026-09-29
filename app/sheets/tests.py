@@ -507,3 +507,30 @@ class QualityOfLifeTests(Base):
         for name in ("manifest.webmanifest", "icon-180.png", "icon-192.png", "icon-512.png", "icon-512-maskable.png"):
             self.assertTrue((settings.BASE_DIR / "static" / name).exists(), name)
 
+    def test_start_from_an_existing_greensheet(self):
+        # The source started ten days ago; item 1 was due seven days after that.
+        Greensheet.objects.filter(pk=self.sheet.pk).update(created_at=timezone.now() - timedelta(days=10), icon="★")
+        self.sheet.refresh_from_db()
+        self.i1.due_date = timezone.localdate() - timedelta(days=3)
+        self.i1.save()
+        services.complete_item(self.i2, self.marcus)
+        d = signin(self.dana)
+        r = d.get(f"/?from={self.sheet.code}")
+        self.assertContains(r, f'value="{self.sheet.code}" selected')
+        d.post("/new", {"name": "Onboarding, Pat", "fulfiller_email": "pat@example.com", "copy_from": self.sheet.code})
+        new = Greensheet.objects.get(name="Onboarding, Pat")
+        titles = list(new.items.values_list("title", flat=True))
+        self.assertEqual(titles, ["Sign the engagement letter", "Provide tax returns"])
+        self.assertEqual(new.items.get(number=1).due_date, timezone.localdate() + timedelta(days=7))
+        self.assertIsNone(new.items.get(number=2).due_date)
+        self.assertFalse(new.items.get(number=2).complete, "completion does not copy")
+        self.assertEqual(new.items.get(number=2).note, "See https://example.com/x")
+        self.assertEqual(new.icon, "★")
+        self.assertEqual(Event.objects.get(kind="sheet.created", greensheet=new).data["copied_from"], self.sheet.code)
+        self.assertContains(d.get(f"/s/{new.code}/history"), "starting from another")
+        # only your own greensheets are a starting point
+        m = signin(self.marcus)
+        r = m.post("/new", {"name": "Nope", "fulfiller_email": "x@example.com", "copy_from": self.sheet.code})
+        self.assertEqual(r.status_code, 404)
+        self.assertContains(d.get(f"/s/{self.sheet.code}"), "Set this for someone else")
+

@@ -14,7 +14,7 @@ The person who runs an instance. The operator has no role on any greensheet by d
 
 ### Greensheet
 
-A set of expected actions a **requester** sets for a single **fulfiller**. A greensheet contains zero or more **items** and carries the requester's **contact details** for that relationship. It may persist indefinitely, with items added and completed over time. A greensheet can be **archived**. A greensheet may carry an **icon**, one character or emoji the requester chose, drawn on the mark so its tab and its row stand out.
+A set of expected actions a **requester** sets for a single **fulfiller**. A greensheet contains zero or more **items** and carries the requester's **contact details** for that relationship. It may persist indefinitely, with items added and completed over time. A greensheet can be **archived**. A greensheet may carry an **icon**, one character or emoji the requester chose, drawn on the mark so its tab and its row stand out. A new greensheet may **start from** one the requester created before: its items are copied, with due dates counted from today; nothing else carries over.
 
 A greensheet has exactly one requester and exactly one fulfiller, bound for its lifetime. Neither can be changed.
 
