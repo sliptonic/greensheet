@@ -534,3 +534,75 @@ class QualityOfLifeTests(Base):
         self.assertEqual(r.status_code, 404)
         self.assertContains(d.get(f"/s/{self.sheet.code}"), "Set this for someone else")
 
+
+class DraftTests(Base):
+    def test_draft_is_private_unsent_and_can_be_sent_later(self):
+        d = signin(self.dana)
+        d.post("/new", {"name": "Onboarding", "fulfiller_email": "typed@example.com", "draft": "1"})
+        draft = Greensheet.objects.get(name="Onboarding")
+        self.assertTrue(draft.is_draft)
+        self.assertIsNone(draft.fulfiller)
+        self.assertEqual(len(mail.outbox), 0, "a draft sends nothing")
+        self.assertFalse(Person.objects.filter(email="typed@example.com").exists(), "save as draft ignores the email box")
+        self.assertEqual(Event.objects.get(kind="sheet.created", greensheet=draft).data["draft"], True)
+        r = d.get(f"/s/{draft.code}")
+        self.assertContains(r, "not sent to anyone yet")
+        self.assertContains(r, "Send it when it is ready")
+        self.assertNotContains(r, "Preview as")
+        self.assertNotContains(r, "Daily summary")
+        self.assertContains(d.get("/"), "not sent yet")
+        self.assertNotContains(d.get(f"/s/{draft.code}/edit"), "out everywhere")
+        # nobody else can see it
+        self.assertEqual(signin(self.marcus).get(f"/s/{draft.code}").status_code, 404)
+        # items go on it like any greensheet
+        services.add_item(draft, self.dana, title="Laptop and badge")
+        # sending it
+        r = d.post(f"/s/{draft.code}/send", {"fulfiller_email": "Pat@Example.com", "fulfiller_name": "Pat Lee"})
+        self.assertRedirects(r, draft.get_absolute_url(), fetch_redirect_response=False)
+        draft.refresh_from_db()
+        self.assertFalse(draft.is_draft)
+        self.assertEqual(draft.fulfiller.email, "pat@example.com")
+        self.assertEqual(mail.outbox[-1].subject, "Greensheet: Onboarding from Dana Whitfield")
+        self.assertIn(draft.absolute_url, mail.outbox[-1].body)
+        self.assertTrue(draft.invite.pk)
+        self.assertContains(d.get(f"/s/{draft.code}/history"), "sent the greensheet to pat@example.com")
+        self.assertNotContains(d.get(f"/s/{draft.code}"), "Send it when it is ready")
+        # Pat can open it now
+        pat = Person.objects.get(email="pat@example.com")
+        self.assertContains(signin(pat).get(f"/s/{draft.code}"), "Laptop and badge")
+
+    def test_blank_email_on_the_create_form_also_makes_a_draft(self):
+        d = signin(self.dana)
+        d.post("/new", {"name": "Someday", "fulfiller_email": ""})
+        self.assertTrue(Greensheet.objects.get(name="Someday").is_draft)
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_send_refuses_self_blocked_and_already_sent(self):
+        d = signin(self.dana)
+        d.post("/new", {"name": "Draft", "draft": "1"})
+        draft = Greensheet.objects.get(name="Draft")
+        with self.assertRaises(services.Refused):
+            services.send_greensheet(draft, self.dana, fulfiller_email=self.dana.email)
+        with self.assertRaises(services.Refused):
+            services.send_greensheet(self.sheet, self.dana, fulfiller_email="x@example.com")
+        with self.assertRaises(services.Refused):
+            services.send_greensheet(draft, self.marcus, fulfiller_email="x@example.com")
+        with self.assertRaises(services.Refused):
+            services.create_flip_side(draft, self.dana)
+
+    def test_draft_as_a_starting_point_and_in_the_api(self):
+        d = signin(self.dana)
+        d.post("/new", {"name": "Template", "draft": "1"})
+        tpl = Greensheet.objects.get(name="Template")
+        services.add_item(tpl, self.dana, title="Step one")
+        d.post("/new", {"name": "For Sam", "fulfiller_email": "sam@example.com", "copy_from": tpl.code})
+        new = Greensheet.objects.get(name="For Sam")
+        self.assertFalse(new.is_draft)
+        self.assertEqual(list(new.items.values_list("title", flat=True)), ["Step one"])
+        token = services.create_token(self.dana, "t")
+        r = Client().get("/api/sheets", HTTP_AUTHORIZATION=f"Bearer {token.key}")
+        rows = {g["code"]: g for g in r.json()["greensheets"]}
+        self.assertTrue(rows[tpl.code]["draft"])
+        self.assertIsNone(rows[tpl.code]["fulfiller"])
+        self.assertFalse(rows[new.code]["draft"])
+

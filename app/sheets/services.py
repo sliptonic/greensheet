@@ -120,20 +120,9 @@ def consume_magic_link(token):
 # ---------------------------------------------------------------- greensheets
 
 
-@transaction.atomic
-def create_greensheet(
-    requester, *, name, fulfiller_email, fulfiller_name="", contact_email="", contact_phone="", icon="", copy_from=None
-):
-    """Set a greensheet for someone. With copy_from, one of the requester's own
-    greensheets, the items come along: titles, notes, and due dates kept at
-    the same distance from today as they were from that greensheet's start.
-    The same list for every new hire, every client, every tenant."""
-    name = name.strip()
-    if not name:
-        raise Refused("Give the greensheet a name.")
-    if copy_from is not None and copy_from.requester_id != requester.id:
-        raise Refused("You can only start from a greensheet you created.")
-    fulfiller, _ = Person.objects.get_or_create_by_email(fulfiller_email, fulfiller_name)
+def _fulfiller_for(requester, email, name=""):
+    """The person a greensheet is for, after the checks that guard an invite."""
+    fulfiller, _ = Person.objects.get_or_create_by_email(email, name)
     if fulfiller.id == requester.id:
         raise Refused("A greensheet is for someone else. Enter another person's email.")
     if Block.objects.filter(requester=requester, person=fulfiller).exists():
@@ -142,6 +131,27 @@ def create_greensheet(
     sent_today = Event.objects.filter(kind="invite.sent", actor=requester, at__gte=since).count()
     if sent_today >= settings.DAILY_INVITE_CAP:
         raise Refused("You have sent as many invites as this instance allows in a day. Try tomorrow.")
+    return fulfiller
+
+
+@transaction.atomic
+def create_greensheet(
+    requester, *, name, fulfiller_email="", fulfiller_name="", contact_email="", contact_phone="", icon="", copy_from=None
+):
+    """Set a greensheet for someone, or save a draft to send later.
+
+    Without a fulfiller email the greensheet is a draft: only the requester
+    sees it, nothing is sent, and it can be sent later or used to start
+    others from. With copy_from, one of the requester's own greensheets,
+    the items come along: titles, notes, and due dates kept at the same
+    distance from today as they were from that greensheet's start.
+    The same list for every new hire, every client, every tenant."""
+    name = name.strip()
+    if not name:
+        raise Refused("Give the greensheet a name.")
+    if copy_from is not None and copy_from.requester_id != requester.id:
+        raise Refused("You can only start from a greensheet you created.")
+    fulfiller = _fulfiller_for(requester, fulfiller_email, fulfiller_name) if fulfiller_email.strip() else None
 
     sheet = Greensheet.objects.create(
         name=name,
@@ -152,11 +162,33 @@ def create_greensheet(
         contact_email=(contact_email or requester.email).strip().lower(),
         contact_phone=contact_phone.strip(),
     )
+    data = {}
     if copy_from is not None:
-        record("sheet.created", greensheet=sheet, actor=requester, copied_from=copy_from.code)
+        data["copied_from"] = copy_from.code
+    if fulfiller is None:
+        data["draft"] = True
+    record("sheet.created", greensheet=sheet, actor=requester, **data)
+    if copy_from is not None:
         _copy_items(copy_from, sheet, requester)
-    else:
-        record("sheet.created", greensheet=sheet, actor=requester)
+    if fulfiller is not None:
+        invite = Invite.objects.create(greensheet=sheet)
+        send_invite(invite)
+    return sheet
+
+
+@transaction.atomic
+def send_greensheet(sheet, actor, *, fulfiller_email, fulfiller_name=""):
+    """A draft becomes a greensheet for someone: the invite goes out now."""
+    if not sheet.is_draft:
+        raise Refused("This greensheet has already been sent.")
+    if actor.id != sheet.requester_id:
+        raise Refused("Only the requester can send a greensheet.")
+    _writable(sheet)
+    if "@" not in (fulfiller_email or ""):
+        raise Refused("Enter their email address.")
+    sheet.fulfiller = _fulfiller_for(actor, fulfiller_email, fulfiller_name)
+    sheet.save(update_fields=["fulfiller"])
+    record("sheet.sent", greensheet=sheet, actor=actor, to=sheet.fulfiller.email)
     invite = Invite.objects.create(greensheet=sheet)
     send_invite(invite)
     return sheet
@@ -271,6 +303,8 @@ def revoke_sessions(sheet, actor):
 def create_flip_side(sheet, actor):
     """The fulfiller turns the greensheet over and sets out what they need
     from the requester. Same two people, roles reversed, paired for life."""
+    if sheet.is_draft:
+        raise Refused("A draft has no flip side until it is sent.")
     if sheet.is_flip_side:
         raise Refused("This is already the flip side. Turn it back over to see the front.")
     if sheet.paired is not None:

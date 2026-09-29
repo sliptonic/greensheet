@@ -10,11 +10,15 @@
     <label>Your phone for this greensheet <span class="soft">optional</span> <input name="contact_phone" value="{{ sheet.contact_phone }}"></label>
     <div class="row"><button type="submit">Save</button> <a href="{{ sheet.get_absolute_url }}">Cancel</a></div>
   </form>
+  {% if sheet.is_draft %}
+  <p class="soft small">This is a draft. Send it from the greensheet page when it is ready.</p>
+  {% else %}
   <p class="soft small">The fulfiller, {{ sheet.fulfiller.display }}, cannot be changed. To hand this to someone else, archive it and set a new greensheet.</p>
   <h2>Access</h2>
   <form method="post" action="{% url 'revoke' sheet.code %}" class="stack">{% csrf_token %}
     <p class="soft small">Signs {{ sheet.fulfiller.display }} out of Greensheet on every device. They can sign back in with their email at any time. Use this if a device was lost or a link was forwarded.</p>
     <button type="submit">Sign {{ sheet.fulfiller.display }} out everywhere</button>
   </form>
+  {% endif %}
 </section>
 {% endblock %}

@@ -8,7 +8,7 @@
 <div class="preview-bar no-print">Previewing as {{ sheet.fulfiller.display }} will see it. <a href="{{ sheet.get_absolute_url }}">Back to editing</a></div>
 {% endif %}
 <div class="top-line">{% include "sheets/_mark.html" %}<h1>{{ sheet.name }}</h1></div>
-<p class="from">From <b>{{ sheet.requester.display }}</b> · for {{ sheet.fulfiller.display }}{% if sheet.is_flip_side %} · <a href="{{ sheet.flip_of.get_absolute_url }}" class="no-print">flip side of {{ sheet.flip_of.name }}</a><span class="print-only-inline">flip side of {{ sheet.flip_of.name }}</span>{% endif %}</p>
+<p class="from">From <b>{{ sheet.requester.display }}</b> · {% if sheet.is_draft %}<span class="draft-tag">draft</span> not sent to anyone yet{% else %}for {{ sheet.fulfiller.display }}{% endif %}{% if sheet.is_flip_side %} · <a href="{{ sheet.flip_of.get_absolute_url }}" class="no-print">flip side of {{ sheet.flip_of.name }}</a><span class="print-only-inline">flip side of {{ sheet.flip_of.name }}</span>{% endif %}</p>
 {% include "sheets/_meta.html" %}
 
 <div class="print-only print-head">
@@ -37,13 +37,25 @@
 </form>
 {% endif %}
 
+{% if sheet.is_draft and role == "requester" and not sheet.archived %}
+<form method="post" action="{% url 'send_sheet' sheet.code %}" class="send-box no-print">{% csrf_token %}
+  <p class="send-title">Send it when it is ready</p>
+  <p class="soft">They get one email with this greensheet's address. Until then only you can see it. A draft is also a fine thing to start other greensheets from.</p>
+  <div class="send-row">
+    <label>Their email <input type="email" name="fulfiller_email" required autocomplete="off"></label>
+    <label>Their name, optional <input name="fulfiller_name"></label>
+    <button type="submit">Send the invite</button>
+  </div>
+</form>
+{% endif %}
+
 <div class="foot no-print">
   <a href="{% url 'history' sheet.code %}">History</a>
   <a href="#" onclick="window.print();return false;">Print</a>
-  <form method="post" action="{% url 'digest_toggle' sheet.code %}" class="inline">{% csrf_token %}<button class="linkish" type="submit">Daily summary: {% if digest.enabled %}on{% else %}off{% endif %}</button></form>
+  {% if not sheet.is_draft %}<form method="post" action="{% url 'digest_toggle' sheet.code %}" class="inline">{% csrf_token %}<button class="linkish" type="submit">Daily summary: {% if digest.enabled %}on{% else %}off{% endif %}</button></form>{% endif %}
   {% include "sheets/_completed_toggle.html" %}
   {% if role == "requester" %}
-    <a href="?preview=1">Preview as {{ sheet.fulfiller.display }}</a>
+    {% if not sheet.is_draft %}<a href="?preview=1">Preview as {{ sheet.fulfiller.display }}</a>{% endif %}
     <a href="{% url 'edit_sheet' sheet.code %}">Edit details</a>
     <a href="{% url 'home' %}?from={{ sheet.code }}" title="Start a new greensheet with these items for someone else">Set this for someone else</a>
     {% if sheet.archived %}

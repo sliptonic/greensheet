@@ -17,6 +17,7 @@ urlpatterns = [
     path("s/<str:code>", views.sheet, name="sheet"),
     path("s/<str:code>/history", views.history, name="history"),
     path("s/<str:code>/edit", views.edit_sheet, name="edit_sheet"),
+    path("s/<str:code>/send", views.send_sheet, name="send_sheet"),
     path("s/<str:code>/archive", views.archive, name="archive"),
     path("s/<str:code>/unarchive", views.unarchive, name="unarchive"),
     path("s/<str:code>/summary", views.digest_toggle, name="digest_toggle"),

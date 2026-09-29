@@ -260,3 +260,13 @@ html.desktop .mobile-only{display:none}
 .ch-menu-title{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-faint);padding:6px 12px 4px}
 .ch-menu button{background:none;border:0;text-align:left;font:inherit;font-size:14px;color:var(--ink);padding:7px 12px;cursor:pointer}
 .ch-menu button:hover,.ch-menu button:focus-visible{background:var(--paper);outline:none}
+
+/* ---------- drafts ---------- */
+.draft-tag{display:inline-block;font-family:var(--sans);font-size:10.5px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--ink);border:1px solid var(--ink);padding:0 5px;margin-right:4px;vertical-align:1px;line-height:1.5}
+.send-box{margin:34px 0 0 28px;padding:16px 18px;border:1px dashed var(--rule);background:#fff;font-family:var(--sans);font-size:14px}
+.send-box p{margin:0 0 6px}
+.send-box .send-title{font-weight:600;font-size:15px}
+.send-box .send-row{display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:end;margin-top:12px}
+@media (max-width:640px){.send-box .send-row{grid-template-columns:1fr}}
+.send-box label{display:grid;gap:4px;font-size:13px;color:var(--ink-soft)}
+.send-box button{background:var(--ink);color:var(--paper);border:0;padding:9px 16px;cursor:pointer;height:38px}

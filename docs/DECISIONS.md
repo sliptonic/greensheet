@@ -406,3 +406,22 @@ Full specification of the hard copy is in `docs/DESIGN.md` under Surfaces.
 **Consequences.**
 - "Set this for someone else" on any greensheet you own opens the create form with it selected.
 - Item numbers restart at 1 on the new greensheet.
+
+---
+
+## D25. A greensheet can be a draft
+
+**Status:** Accepted, 2026-09-29
+
+**Decision.** A greensheet may be created without a fulfiller. It is then a draft: the requester writes items, sets details and an icon, prints it, archives it, and starts other greensheets from it, but nobody else can see it and nothing is sent. From the draft's page the requester sends it to an email address, at which point the invite goes out and it becomes an ordinary greensheet. Sending is one way; a sent greensheet does not return to draft. The history records the creation as a draft and the sending.
+
+**Why.** Two real moments: the requester does not yet know the email address, and the requester wants to build a list once and keep it to start from, for onboarding, engagements, tenancies. Neither should force sending an invite. A draft is the same greensheet with the fulfiller not yet named, which keeps one concept and reuses everything the sheet already does.
+
+**Rejected.**
+- *A separate template object.* Already rejected in D24; a draft is the template you keep.
+- *Storing an email on the draft to send later.* One more field that goes stale. The address is typed when sending.
+- *Drafts visible to a named-but-uninvited fulfiller.* Nothing exists for them until the invite.
+
+**Consequences.**
+- The fulfiller is optional in the data model. Anything that names the fulfiller (preview, daily summary, revoking sessions, the flip side, the API) is absent or null for a draft.
+- The daily invite cap counts the send, not the draft.

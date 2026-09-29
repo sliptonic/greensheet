@@ -257,7 +257,8 @@ def new_sheet(request):
             request.user,
             copy_from=copy_from,
             name=p.get("name", ""),
-            fulfiller_email=p.get("fulfiller_email", ""),
+            # "Save as a draft" keeps it unsent whatever was typed in the email box.
+            fulfiller_email="" if p.get("draft") else p.get("fulfiller_email", ""),
             fulfiller_name=p.get("fulfiller_name", ""),
             contact_email=p.get("contact_email", ""),
             contact_phone=p.get("contact_phone", ""),
@@ -340,6 +341,18 @@ def sheet(request, code):
 def history(request, sheet, role):
     events = sheet.events.select_related("actor").order_by("at", "id")
     return render(request, "sheets/history.html", {"sheet": sheet, "role": role, "events": events})
+
+
+@party
+@requester_only
+@require_POST
+def send_sheet(request, sheet, role):
+    p = request.POST
+    try:
+        services.send_greensheet(sheet, request.user, fulfiller_email=p.get("fulfiller_email", ""), fulfiller_name=p.get("fulfiller_name", ""))
+    except Refused as e:
+        messages.error(request, str(e))
+    return redirect(sheet)
 
 
 @party

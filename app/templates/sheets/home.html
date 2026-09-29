@@ -41,9 +41,9 @@
         <a href="{{ s.get_absolute_url }}">
           {% include "sheets/_mark.html" with sheet=s cls="sm" %}
           <span class="name">{{ s.name }}</span>
-          <span class="who">for {{ s.fulfiller.display }}{% if s.is_flip_side %} · flip side{% endif %}</span>
+          <span class="who">{% if s.is_draft %}<span class="draft-tag">draft</span> not sent yet{% else %}for {{ s.fulfiller.display }}{% endif %}{% if s.is_flip_side %} · flip side{% endif %}</span>
         </a>
-        <span class="count">{% if s.archived %}archived{% elif s.open_items %}{{ s.open_items }} open{% elif s.done_items %}all done{% else %}empty{% endif %}</span>
+        <span class="count">{% if s.archived %}archived{% elif s.is_draft %}{{ s.open_items }} item{{ s.open_items|pluralize }}{% elif s.open_items %}{{ s.open_items }} open{% elif s.done_items %}all done{% else %}empty{% endif %}</span>
       </li>
       {% endfor %}
     </ul>
@@ -62,11 +62,11 @@
       {% endif %}
       <label>Name of the greensheet <input name="name" required placeholder="2025 tax engagement"></label>
       {% include "sheets/_icon_field.html" %}
-      <label>For (their email) <input type="email" name="fulfiller_email" required></label>
+      <label>For (their email) <span class="soft">leave blank to keep it as a draft</span> <input type="email" name="fulfiller_email"></label>
       <label>Their name <input name="fulfiller_name"></label>
       <label>Your contact email for this greensheet <input type="email" name="contact_email" value="{{ user.email }}"></label>
       <label>Your phone for this greensheet <span class="soft">optional</span> <input name="contact_phone" placeholder="(555) 555-0100"></label>
-      <div class="row"><button type="submit">Create and send the invite</button> <button type="button" class="linkish" id="create-cancel">Cancel</button></div>
+      <div class="row"><button type="submit">Create and send the invite</button> <button type="submit" name="draft" value="1" class="linkish" formnovalidate>Save as a draft</button> <button type="button" class="linkish" id="create-cancel">Cancel</button></div>
     </form>
   </section>
 </div>

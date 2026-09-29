@@ -82,6 +82,10 @@ The role held by the person who creates and owns a greensheet. The requester cre
 
 The role held by the person expected to perform the actions on a greensheet. Each greensheet has exactly one fulfiller, who is always a single human being. The fulfiller can view the greensheet and its history, mark items complete or reopen them, and initiate communication through channels. The fulfiller cannot add, edit, or delete items. A fulfiller may also be a requester on other greensheets.
 
+### Draft
+
+A greensheet the requester has not yet sent to anyone. It has items and details but no fulfiller; only the requester can see it, and nothing is emailed. The requester **sends** a draft by naming the fulfiller's email address, which issues the invite and makes it an ordinary greensheet. A draft is also a starting point for new greensheets.
+
 ### Invite
 
 The act by which a requester associates a person, by email address, with a greensheet as its fulfiller. An invite sends the fulfiller one email containing the greensheet's address. Opening that address signed out asks for an email and sends a magic link that returns to the greensheet. No further invite email is sent for that greensheet and address until the invite is accepted. Every invite email carries a **decline** link. Requesters have a daily invite cap.

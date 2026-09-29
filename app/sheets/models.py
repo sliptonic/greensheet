@@ -91,7 +91,9 @@ class Greensheet(models.Model):
     # this greensheet's tab and row stand out from the others. Blank: plain mark.
     icon = models.CharField(max_length=16, blank=True, default="")
     requester = models.ForeignKey(Person, on_delete=models.CASCADE, related_name="sheets_set")
-    fulfiller = models.ForeignKey(Person, on_delete=models.PROTECT, related_name="sheets_for")
+    # None while a draft: the requester is still writing it, or keeping it to
+    # start others from, and has not sent it to anyone yet.
+    fulfiller = models.ForeignKey(Person, null=True, blank=True, on_delete=models.PROTECT, related_name="sheets_for")
     contact_email = models.EmailField()
     contact_phone = models.CharField(max_length=40, blank=True)
     created_at = models.DateTimeField(default=timezone.now)
@@ -123,6 +125,10 @@ class Greensheet(models.Model):
         except Greensheet.DoesNotExist:
             return None
 
+    @property
+    def is_draft(self):
+        return self.fulfiller_id is None
+
     def other_party(self, person):
         return self.fulfiller if person.id == self.requester_id else self.requester
 
@@ -135,7 +141,7 @@ class Greensheet(models.Model):
             return None
         if person.id == self.requester_id:
             return "requester"
-        if person.id == self.fulfiller_id:
+        if self.fulfiller_id is not None and person.id == self.fulfiller_id:
             return "fulfiller"
         return None
 
@@ -287,6 +293,7 @@ class Event(models.Model):
         ("item.completed", "item completed"),
         ("item.reopened", "item reopened"),
         ("item.deleted", "item deleted"),
+        ("sheet.sent", "draft sent"),
         ("invite.sent", "invite sent"),
         ("invite.accepted", "invite accepted"),
         ("invite.declined", "invite declined"),
@@ -341,9 +348,12 @@ class Event(models.Model):
         k = self.kind
         it = self.item_label
         if k == "sheet.created":
+            what = "a draft" if self.data.get("draft") else "the greensheet"
             if self.data.get("copied_from"):
-                return f"{who} created the greensheet, starting from another"
-            return f"{who} created the greensheet"
+                return f"{who} created {what}, starting from another greensheet"
+            return f"{who} created {what}"
+        if k == "sheet.sent":
+            return f"{who} sent the greensheet to {self.data.get('to', 'the fulfiller')}"
         if k == "sheet.edited":
             return f"{who} edited the greensheet"
         if k == "sheet.archived":
